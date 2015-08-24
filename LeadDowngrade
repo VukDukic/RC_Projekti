@@ -1,0 +1,776 @@
+/***************************************************************************************************************************************************
+UPDATES:
+By: eugenebasianomutya
+Date: 08132015
+Case: 03383610 - Downgrade Reason - International
+Description: Lead downgrade reason 'Lacking International Footprint' under 'delayed lead' .
+***************************************************************************************************************************************************/
+
+public class LeadDowngrade {
+     public string selectedDowngradeReasons {get;set;}
+     public string sectedSubDowngradeReason {get;set;}
+     public string finalSelectedCXDetaildetail{get;set;}
+     public List<string> lstsectedCompanyDetaildetail {get;set;}
+     public string lstsectedHostedPBXdetail {get;set;}
+     public string lstsectedOnPremisePBXdetail {get;set;}
+     public string lstselectedCellPhoneOnly{get;set;}//CellPhoneOnly
+     public string lstSelectedLandLine{get;set;}//Land Line
+     public List<string> lstSelectedTraditional{get;set;}//Tradtional
+     public List<string> lstsectedFax {get;set;}//Fax
+     public List<String> lstselectedcostDetail {get;set;} 
+     public List<string> lstselectedNothing {get;set;}  
+     public List<string> lstConsolidatingAccount{get;set;}    //RingCentral – Consolidating Account
+     public boolean toshowmissingfeature {get;set;}
+     public boolean toshowCouldnotworkingdetail {get;set;}
+     public boolean toshowQOsdetail {get;set;}
+     public boolean toshowotherdetail {get;set;}
+     public boolean toshowFax{get;set;}
+     public boolean toshowerrorMsg {get;set;}
+     public List<string> errorMsgList {get;set;} 
+     public Lead leadObj{get;set;}
+     public List<string> tempList {get;set;}
+     public boolean toshowOther_PDR {get;set;}//Other (provide detailed reason)- RingCentral – Consolidating Account
+     public boolean toshowNothing{get;set;}
+     public boolean toshowSpecifyOthers {get;set;}//other
+     public boolean toshowLandline{get;set;}//LandLine
+     public boolean toshowCellPhoneOnly{get;set;}//cell Phone Only 
+     public boolean toshowOnPremisePBX{get;set;}
+     public boolean toshowHostedPBX{get;set;}//updated
+     public boolean atntSection{get;set;}
+     public boolean retentionSection{get;set;}
+     public boolean showTimeframeOther{get;set;}
+     public boolean showMissingCriticalOther{get;set;}
+     public boolean showSubDowngradeReasonNotBANT {get;set;}
+     public boolean showSubDowngradeReasonUnableContact {get;set;}
+     public boolean showSubDowngradeReasonNotNew {get;set;}
+     public boolean showSubDowngradeReasonBandwidth {get;set;}
+     public boolean showSubDowngradeReasonConcernsAbout {get;set;}
+     public boolean showSubDowngradeReasonMissingCriti {get;set;}
+     public boolean showSubDowngradeReasonPrice {get;set;}
+     public boolean showSubDowngradeReasonReviews {get;set;}
+     public boolean showOtherReason {get;set;}
+     public boolean showSubOtherReason {get;set;}
+     public string finalSelectedReason {get;set;}
+     public string finalSelectedSubReason = '';
+     public string finalSelectedSubOther = '';
+     public string seletedRsnforBnt {get;set;}
+     public boolean toshowSpecifyValue {get;set;}//other(please specify) 
+     public boolean toshowOtherCloudPBX{get;set;}  
+     public boolean toshowTraditional{get;set;}//Traditional
+     public boolean toshowConsolidatingAccount{get;set;}   // RingCentral – Consolidating Account
+     public boolean toShowMainPanel {get;set;}
+     public string brand;
+     public string strDownGradeRsn;
+     public string strSubDownGradeRsn;
+     set<string> issueWithRingcentralSet = new set<string>();
+     public String recordTypeName{get;set;}
+     public LeadDowngrade(ApexPages.StandardController controller) {
+        try {
+            if(controller.getId() != null) {
+                this.leadObj = (Lead)controller.getRecord();
+                toShowMainPanel = false;
+                Lead leadObjNew = [select Lead_Brand_Name__c,Downgrade_Reason__c, Sub_Downgrade_Reason__c, RecordType.Name 
+                                    from Lead where Id = :controller.getId()  limit 1];
+                if(leadObjNew != null && leadObjNew.RecordType != null){
+                    recordTypeName = leadObjNew.RecordType.Name;
+                }                   
+                brand = leadObjNew.Lead_Brand_Name__c != null? leadObjNew.Lead_Brand_Name__c : 'RingCentral';
+                strDownGradeRsn = leadObjNew.Downgrade_Reason__c;
+                strSubDownGradeRsn = leadObjNew.Sub_Downgrade_Reason__c;
+                checkIsRecordTypePermitted(leadObj.recordTypeID);
+                leadObj.What_will_cx_use_for_their_phone_system__c = '';
+                leadObj.Hosted_PBX__c = '';
+                leadObj.On_Premise_PBX__c = '';
+                leadObj.Specify_other__c = '';
+                showMissingCriticalOther = false; 
+                atntSection = false;
+                retentionSection = false;
+                showTimeframeOther = false;
+                showSubOtherReason=false;
+                showOtherReason =false;
+                showSubDowngradeReasonNotBANT = false;
+                showSubDowngradeReasonUnableContact = false;
+                showSubDowngradeReasonNotNew = false;
+                showSubDowngradeReasonBandwidth = false;
+                showSubDowngradeReasonConcernsAbout = false;
+                showSubDowngradeReasonMissingCriti = false;
+                showSubDowngradeReasonPrice = false;
+                finalSelectedCXDetaildetail = '';
+                showSubDowngradeReasonReviews = false;
+                selectedDowngradeReasons = '';
+                sectedSubDowngradeReason='';
+                errorMsgList = new List<string>();
+                lstsectedOnPremisePBXdetail = '';//
+                lstselectedCellPhoneOnly = '';//CellPhoneOnly
+                lstSelectedLandLine = '';//Land Line
+                lstSelectedTraditional = new List<string>();//Tradtional
+                lstsectedFax = new List<string>();//Fax
+                lstsectedHostedPBXdetail = '';
+                lstselectedcostDetail = new List<string>();
+                lstselectedNothing = new List<string>(); 
+                lstConsolidatingAccount = new List<string>(); //RingCentral – Consolidating Account
+                toshowCouldnotworkingdetail = false;
+                toshowSpecifyValue = false;
+                toshowmissingfeature = false;
+                toshowQOsdetail = false;
+                toshowotherdetail = false;
+                toShowCustomerSection = false;
+                toshowerrorMsg = false;
+                toshowFax = false;
+                tempList = new List<string>();
+                tempList.add('test');
+                setIssueWithRingcentralValues();
+                isIssueWithRingcentralSelected = false;
+                strSelectedIssueWithRC = null;          
+            } else {
+                ApexPages.addMessage(new ApexPages.Message(ApexPages.Severity.ERROR, 'Invalid Record Id.'));
+            }
+        } catch(Exception ex) {}  
+     }
+     
+     public boolean isIssueWithRingcentralSelected {get;set;}
+     public string strSubDowngradeRsnLabel {get;set;}
+     public boolean isLostLead {get;set;} 
+     public void onChangeReason(){
+        isLostLead = false;
+        toshowHostedPBX = false;
+        toshowOnPremisePBX = false;
+        toShowOtherSubCompetitorBox = false;
+        showSubDowngradeReasonNotBANT = false;
+        showSubDowngradeReasonUnableContact = false;
+        showSubDowngradeReasonNotNew = false;
+        showSubDowngradeReasonBandwidth = false;
+        showSubDowngradeReasonConcernsAbout = false;
+        showSubDowngradeReasonMissingCriti = false;
+        showSubDowngradeReasonPrice = false;
+        showSubDowngradeReasonReviews = false;
+        showOtherReason = false;
+        atntSection = false;
+        retentionSection = false;
+        toshowerrorMsg = false;
+        showSubOtherReason = false;
+        showMissingCriticalOther = false;
+        showTimeframeOther = false;
+        strSubDowngradeRsnLabel = 'Sub-Downgrade Reason';
+        finalSelectedReason = selectedDowngradeReasons;
+        sectedSubDowngradeReason = '';
+        finalSelectedSubReason = '';
+        leadObj.Sub_Downgrade_Reason_Other__c = '';
+        leadObj.Specify_other__c = '';
+        if(selectedDowngradeReasons == 'Not BANT qualified'){
+            showSubDowngradeReasonNotBANT = true;
+        } else if(selectedDowngradeReasons == 'Unable to contact'){
+            showSubDowngradeReasonUnableContact = true;
+        } else if(selectedDowngradeReasons == 'Not a new prospect'){
+            showSubDowngradeReasonNotNew = true; 
+        } else if(selectedDowngradeReasons == 'Missing critical features'){
+            showSubDowngradeReasonMissingCriti = true;
+            strSubDowngradeRsnLabel = 'Missing critical features';      
+        } else if(selectedDowngradeReasons == 'Hosted PBX') {
+            toshowHostedPBX = true;
+            strSubDowngradeRsnLabel = 'Hosted PBX';
+            isLostLead = true;
+        } else if(selectedDowngradeReasons == 'On-Premise PBX') {
+            toshowOnPremisePBX = true;
+            isLostLead = true;
+            strSubDowngradeRsnLabel = 'On-Premise PBX';
+        } else if(selectedDowngradeReasons == 'Prefers not to say' || selectedDowngradeReasons == 'Other') {
+            isLostLead = true;
+            if(selectedDowngradeReasons == 'Other'){
+                showOtherReason = true;
+            }
+            atntSection = true; 
+            retentionSection = true;
+        } else if(selectedDowngradeReasons == '' || 
+                selectedDowngradeReasons == 'Retention Lead Closed' || 
+                selectedDowngradeReasons=='AT&T Seller' || 
+                selectedDowngradeReasons == 'Purchase Blocker' || 
+                selectedDowngradeReasons == 'Doesn’t have mobility number' || 
+                selectedDowngradeReasons == 'Lost Budget - project not funded' ||
+                selectedDowngradeReasons == 'Too Much Risk' ||
+                selectedDowngradeReasons == 'Project deprioritized' ||
+                selectedDowngradeReasons == 'Sponsor left company' ||
+                selectedDowngradeReasons == 'Just doing research stage' ||
+                selectedDowngradeReasons == 'Future project - give a date - task' ||
+                selectedDowngradeReasons == 'Building move delayed' ||
+                selectedDowngradeReasons == 'Not enough bandwidth/infrastructure' ||
+                selectedDowngradeReasons == 'Waiting for contract to end' ||
+                selectedDowngradeReasons == 'Lacking International Footprint'){
+                if(selectedDowngradeReasons == 'Other'){
+                    showOtherReason = true;
+                }
+                atntSection = true; 
+                retentionSection = true;
+        } else {
+            
+        }
+     }
+     
+     public void onChangeSubReason(){
+        toshowerrorMsg = false;
+        leadObj.Downgrade_Reason_Other__c = '';
+        leadObj.Sub_Downgrade_Reason_Other__c = '';
+        showSubOtherReason = false;
+        toShowOtherSubCompetitorBox = false;
+        showMissingCriticalOther = false;
+        showTimeframeOther = false;
+        finalSelectedSubReason = sectedSubDowngradeReason;
+        if(sectedSubDowngradeReason == 'Other (provide detailed reason)'){
+            if(isLostLead) {
+                toShowOtherSubCompetitorBox = true;
+            } else if(!isLostLead) {
+                showSubOtherReason = true;
+            }
+        } else if(sectedSubDowngradeReason == 'Time frame greater than X months'){
+            showTimeframeOther = true;
+        } else if(sectedSubDowngradeReason == 'Call Center Functionality' || sectedSubDowngradeReason == 'CRM Integration' 
+                 || sectedSubDowngradeReason == 'Large Account Management / UI limitations' || sectedSubDowngradeReason == 'Mobile features'
+                 || sectedSubDowngradeReason == 'Voicemail Transcription (VM to Text)'){
+            showMissingCriticalOther = true;
+            system.debug('@@@@@@ showMissingCriticalOther '+showMissingCriticalOther);
+        }
+     }
+     
+     public PageReference next() {
+        toShowCustomerSection = true;
+        toshowerrorMsg = false;
+        errorMsgList = new List<string>();
+        if(finalSelectedReason == null || finalSelectedReason == '' ) {
+            toshowerrorMsg = true;
+            toShowCustomerSection = false;
+            errorMsgList.add('Please select Downgrade Reason.');
+        } else if((finalSelectedSubReason == null || finalSelectedSubReason == '') && finalSelectedReason != 'Prefers not to say'){
+            if(finalSelectedReason == 'Hosted PBX') {
+                toshowerrorMsg = true;
+                toShowCustomerSection = false;
+                errorMsgList.add('Please select Hosted PBX.');
+            } else if(finalSelectedReason == 'On-Premise PBX') {
+                toshowerrorMsg = true;
+                toShowCustomerSection = false;
+                errorMsgList.add('Please select On-Premise PBX.');
+            } else if(finalSelectedReason == 'Other' && (leadObj.Specify_other__c == '' || leadObj.Specify_other__c == null)) {
+                toshowerrorMsg = true;
+                toShowCustomerSection = false;
+                errorMsgList.add('Please select other value for Lost Lead.');
+            }
+        }
+        selectedDowngradeReasons = finalSelectedReason;
+        sectedSubDowngradeReason = finalSelectedSubReason;
+        return null;
+     }
+     
+    public boolean toShowCustomerSection {get;set;}
+    public PageReference updateLead() {
+        try {
+            leadObj.Downgrade_Customer__c = '';
+            leadObj.Lost_to_Competition__c = '';
+            leadObj.Downgrade_Reason__c =  '';
+            leadObj.Sub_Downgrade_Reason__c =  '';
+            leadObj.What_will_cx_use_for_their_phone_system__c = '';
+            leadObj.On_Premise_PBX__c = '';
+            leadObj.Hosted_PBX__c = '';
+            toshowerrorMsg = false;
+            errorMsgList = new List<string>();
+            if(!toShowCustomerSection) {
+                if(finalSelectedReason == null || finalSelectedReason == '' ) {
+                    toshowerrorMsg = true;
+                    toShowCustomerSection = false;
+                    errorMsgList.add('Please select the Downgrade Reason.');
+                } else if((finalSelectedSubReason == null || finalSelectedSubReason == '') && (finalSelectedReason != 'Other' && 
+                            finalSelectedReason != 'AT&T Seller' && finalSelectedReason != 'Purchase Blocker' && 
+                            finalSelectedReason != 'Retention Lead Closed' && 
+                            finalSelectedReason != 'Doesn’t have mobility number' &&
+                            finalSelectedReason != 'Lost Budget - project not funded' &&
+                            finalSelectedReason != 'Too Much Risk' &&
+                            finalSelectedReason != 'Project deprioritized' &&
+                            finalSelectedReason != 'Sponsor left company' &&
+                            finalSelectedReason != 'Just doing research stage' &&
+                            finalSelectedReason != 'Future project - give a date - task' &&
+                            finalSelectedReason != 'Building move delayed' &&
+                            finalSelectedReason != 'Not enough bandwidth/infrastructure' &&
+                            finalSelectedReason != 'Waiting for contract to end' && 
+                            finalSelectedReason != 'Lacking International Footprint')){
+                    toshowerrorMsg = true;
+                    toShowCustomerSection = false;
+                    errorMsgList.add('Please select Sub-Downgrade Reason.');
+                }
+                if(finalSelectedReason == 'Other' && (leadObj.Downgrade_Reason_Other__c == '' || leadObj.Downgrade_Reason_Other__c == null)){
+                    toshowerrorMsg = true;
+                    toShowCustomerSection = false;
+                    errorMsgList.add('Please provide detailed reason.');
+                }
+                if(finalSelectedSubReason == 'Time frame greater than X months' && 
+                    (leadObj.Timeframe_greater_than_X_months__c == '' || leadObj.Timeframe_greater_than_X_months__c == null)){
+                    toshowerrorMsg = true;
+                    toShowCustomerSection = false;
+                    errorMsgList.add('Please provide timeframe months detail.');
+                }
+                if(finalSelectedSubReason == 'Other (provide detailed reason)' && 
+                   (leadObj.Sub_Downgrade_Reason_Other__c == '' || leadObj.Sub_Downgrade_Reason_Other__c == null)
+                   ){
+                    toshowerrorMsg = true; 
+                    toShowCustomerSection = false;
+                    errorMsgList.add('Please provide detailed sub-reason.');
+                }   
+            } else if(toShowCustomerSection) {
+                if(string.isBlank(strSelectedIssueWithRC)) {
+                    toshowerrorMsg = true; 
+                    errorMsgList.add('Please select the Downgrade Reason.');
+                } else if(strSelectedIssueWithRC != 'Other' && string.isBlank(strSelectedSubIssueWithRC)) {
+                    toshowerrorMsg = true; 
+                    errorMsgList.add('Please select the Sub-Downgrade Reason.');
+                } else if(strSelectedIssueWithRC == 'Other' && string.isBlank(leadObj.Downgrade_Reason_Other__c)) {
+                    toshowerrorMsg = true; 
+                    errorMsgList.add('Please specify the reason this record was Downgraded.');
+                } else if(strSelectedIssueWithRC != null && strSelectedSubIssueWithRC == 'Other (provide detailed reason)' && 
+                   (leadObj.Sub_Downgrade_Reason_Other__c == '' || leadObj.Sub_Downgrade_Reason_Other__c == null)
+                   ){
+                    toshowerrorMsg = true; 
+                    errorMsgList.add('Please provide detailed sub-reason.');
+                }
+            }
+  
+            
+            if(toshowerrorMsg == false) {
+                if(finalSelectedSubReason != 'Time frame greater than X months') {
+                    leadObj.Timeframe_greater_than_X_months__c = '';     
+                } 
+                if(finalSelectedReason != 'Other' && !isLostLead) {
+                    leadObj.Downgrade_Reason_Other__c = '';  
+                }
+                 
+                if(!isLostLead) {
+                    leadObj.Downgrade_Reason__c =  finalSelectedReason;
+                    leadObj.Sub_Downgrade_Reason__c =  finalSelectedSubReason;
+                } else if(isLostLead) {
+                    leadObj.What_will_cx_use_for_their_phone_system__c = finalSelectedReason;
+                    if(leadObj.What_will_cx_use_for_their_phone_system__c == 'Hosted PBX') {
+                        leadObj.Hosted_PBX__c = finalSelectedSubReason;
+                        leadObj.Downgrade_Customer__c =   leadObj.Hosted_PBX__c;
+                        if(leadObj.Hosted_PBX__c == 'Prefers not to say') {
+                            leadObj.Lost_to_Competition__c = leadObj.Hosted_PBX__c + ' - ' + leadObj.What_will_cx_use_for_their_phone_system__c;
+                            leadObj.Downgrade_Customer__c = leadObj.Hosted_PBX__c + ' - ' + leadObj.What_will_cx_use_for_their_phone_system__c;
+                        } else if(leadObj.Hosted_PBX__c == 'Other (provide detailed reason)') {
+                            leadObj.Lost_to_Competition__c = 'Other' + ' - ' + leadObj.What_will_cx_use_for_their_phone_system__c;
+                            leadObj.Downgrade_Customer__c = 'Other' + ' - ' + leadObj.What_will_cx_use_for_their_phone_system__c;
+                        } else {
+                            leadObj.Lost_to_Competition__c = leadObj.Hosted_PBX__c;
+                            leadObj.Downgrade_Customer__c = leadObj.Hosted_PBX__c;
+                        }
+                    } else if(leadObj.What_will_cx_use_for_their_phone_system__c == 'On-Premise PBX') {
+                        leadObj.On_Premise_PBX__c = finalSelectedSubReason;
+                        leadObj.Downgrade_Customer__c =   leadObj.On_Premise_PBX__c;
+                        if(leadObj.On_Premise_PBX__c == 'Prefers not to say') {
+                            leadObj.Lost_to_Competition__c = leadObj.On_Premise_PBX__c + ' - ' + leadObj.What_will_cx_use_for_their_phone_system__c;
+                            leadObj.Downgrade_Customer__c = leadObj.On_Premise_PBX__c + ' - ' + leadObj.What_will_cx_use_for_their_phone_system__c;
+                        } else if(leadObj.On_Premise_PBX__c == 'Other (provide detailed reason)') {
+                            leadObj.Lost_to_Competition__c = 'Other' + ' - ' + leadObj.What_will_cx_use_for_their_phone_system__c;
+                            leadObj.Downgrade_Customer__c = 'Other' + ' - ' + leadObj.What_will_cx_use_for_their_phone_system__c;
+                        } else {
+                            leadObj.Lost_to_Competition__c = leadObj.On_Premise_PBX__c;
+                            leadObj.Downgrade_Customer__c = leadObj.On_Premise_PBX__c;
+                        }
+                    } else {
+                        leadObj.Lost_to_Competition__c = leadObj.What_will_cx_use_for_their_phone_system__c;
+                        leadObj.Downgrade_Customer__c = leadObj.What_will_cx_use_for_their_phone_system__c;
+                    }
+                    leadObj.Other_SubCompetitors__c =  otherSubCompetitors;
+                    leadObj.Downgrade_Reason__c =  strSelectedIssueWithRC;
+                    leadObj.Sub_Downgrade_Reason__c =  strSelectedSubIssueWithRC;
+                }
+                leadObj.Status = '0. Downgraded';
+                update leadObj;
+                return new pagereference('/'+leadObj.id);
+            }   
+        } catch(Exception ex) {
+            toshowerrorMsg = true;
+            errorMsgList.add(ex.getMessage());
+        }
+        return null;
+     }
+     
+     public PageReference back() { //** PREVIOUS PAGEs
+        toShowCustomerSection = false;
+        errorMsgList.clear();
+        toshowerrorMsg = false;
+        //selectedDowngradeReasons = finalSelectedReason;
+        //sectedSubDowngradeReason = finalSelectedSubReason;
+        //finalSelectedReason = '';
+        //finalSelectedSubReason = '';
+        showMissingCriticalOther = false;
+        showTimeframeOther = false;
+        showSubDowngradeReasonBandwidth = false; 
+        showSubDowngradeReasonConcernsAbout = false;
+        showSubDowngradeReasonMissingCriti = false;
+        showSubDowngradeReasonPrice = false;
+        showSubDowngradeReasonReviews = false;
+        strSelectedIssueWithRC = '';
+        strSelectedSubIssueWithRC = '';
+        toShowIssueWithRCOther = false;
+        toShowSubIssueWithRCOther = false;
+        leadObj.Sub_Downgrade_Reason_Other__c = '';
+        return null;
+     }
+     
+     public string strSelectedIssueWithRC {get;set;}
+     public string strSelectedSubIssueWithRC {get;set;}
+     public string strSubIssueWithRCLbl {get;set;}
+     public boolean toShowIssueWithRCOther {get;set;}
+     public boolean toShowSubIssueWithRCOther {get;set;}
+     public void onChangeIssueWithRC() {
+        showSubDowngradeReasonBandwidth = false; 
+        showSubDowngradeReasonConcernsAbout = false;
+        showSubDowngradeReasonMissingCriti = false;
+        showSubDowngradeReasonPrice = false;
+        showSubDowngradeReasonReviews = false;
+        strSelectedSubIssueWithRC = '';
+        toShowIssueWithRCOther = false;
+        toShowSubIssueWithRCOther = false;
+        leadObj.Sub_Downgrade_Reason_Other__c = '';
+        if(strSelectedIssueWithRC == 'Bandwidth / Wiring'){
+            showSubDowngradeReasonBandwidth = true; 
+            strSubIssueWithRCLbl = 'Bandwidth / Wiring';
+        } else if(strSelectedIssueWithRC == 'Concerns about reliability / usability / support'){
+            showSubDowngradeReasonConcernsAbout = true; 
+            strSubIssueWithRCLbl = 'Concerns about reliability / usability / support';
+        } else if(strSelectedIssueWithRC == 'Missing critical features'){
+            strSubIssueWithRCLbl = 'Missing critical features';
+            showSubDowngradeReasonMissingCriti = true;
+        } else if(strSelectedIssueWithRC == 'Price'){
+            strSubIssueWithRCLbl = 'Price';
+            showSubDowngradeReasonPrice = true;  
+        } else if(strSelectedIssueWithRC == 'Reviews'){
+            strSubIssueWithRCLbl = 'Reviews';
+            showSubDowngradeReasonReviews = true;
+        } else if(strSelectedIssueWithRC == 'Other') {
+            toShowIssueWithRCOther = true;
+        }
+     }
+     
+     public void onChangeSubIssueWithRC() {
+        toshowerrorMsg = false;
+        showMissingCriticalOther = false;
+        toShowSubIssueWithRCOther = false;
+        if(strSelectedSubIssueWithRC == 'Other (provide detailed reason)'){
+            toShowSubIssueWithRCOther = true;
+        } else if(strSelectedSubIssueWithRC == 'Call Center Functionality' || strSelectedSubIssueWithRC == 'CRM Integration' 
+                 || strSelectedSubIssueWithRC == 'Large Account Management / UI limitations' || strSelectedSubIssueWithRC == 'Mobile features'
+                 || strSelectedSubIssueWithRC == 'Voicemail Transcription (VM to Text)'){
+            showMissingCriticalOther = true;
+            system.debug('@@@@@@ showMissingCriticalOther '+ showMissingCriticalOther);
+        }
+     }
+     
+     public void setIssueWithRingcentralValues() {
+        issueWithRingcentralSet.add('Bandwidth / Wiring');
+        issueWithRingcentralSet.add('Concerns about reliability / usability / support');
+        issueWithRingcentralSet.add('Missing critical features');
+        issueWithRingcentralSet.add('Price');
+        issueWithRingcentralSet.add('Reviews');
+        issueWithRingcentralSet.add('Other');
+     }
+     
+     public boolean setIssueWithRingcentral() {
+        if(!String.isBlank(selectedDowngradeReasons) && issueWithRingcentralSet.contains(selectedDowngradeReasons)) {
+            return true;
+        }
+        return false;
+     }
+     
+    
+    public boolean toShowOtherSubCompetitorBox {get;set;}
+    public string otherSubCompetitors {get;set;}
+    public string createformatDate(Date dt) {
+        string formatDate;
+        try {
+            formatDate = String.valueOf(dt.month()) + '/'+ String.valueOf(dt.day()) + '/' + String.valueOf(dt.year());
+            return formatDate;
+        } catch(Exception ex) {}
+        return null;
+    }
+    
+    
+    public String getHostedPBXListValue(){
+       return lstsectedHostedPBXdetail;
+    }
+    public String getOnPremisePBXListValue(){
+        return lstsectedOnPremisePBXdetail;
+    }
+     public String getCellPhoneOnlyListValue(){//CellPhoneOnly
+        return lstselectedCellPhoneOnly;
+    }
+    public String getLandLineListValue(){//Land Line
+        return lstSelectedLandLine;
+    }
+    public String getTraditionalListValue(){    //Traditional 
+        return createMultiSelectList(lstSelectedTraditional);
+    }
+    public String getNothingListValue(){                                          //Traditional 
+        return createMultiSelectList(lstselectedNothing);
+    }
+    public String getConsolidatingAccount(){  //RingCentral – Consolidating Account
+        return createMultiSelectList(lstConsolidatingAccount);
+    } 
+    
+    public String createMultiSelectList(List<String> lstOptions){
+        String strPram='';
+        integer i=0;
+        if(!lstOptions.isEmpty()){
+            for(String str:lstOptions){
+                if(i==0){
+                    strPram = str;  
+                }else{
+                    strPram += ';'+str;
+                }
+                i++;
+            } 
+        }
+        return strPram; 
+    }  
+    
+    public PageReference cancel() {
+        PageReference rtrnPage;
+        try {
+            if(ApexPages.currentPage().getParameters().get('retURL') != null) {
+                string pgref = ApexPages.currentPage().getParameters().get('retURL');
+                rtrnPage = new PageReference(pgref);
+            } else {
+                string leadId = '/'+ApexPages.currentPage().getParameters().get('Id');
+                rtrnPage = new PageReference(leadId);
+            }
+        } 
+        catch(Exception ex) {}
+        return rtrnPage;
+    }
+     
+    public List<SelectOption> getdowngradeReasonOptionLead() {
+        List<SelectOption> options = new List<SelectOption>();
+        options.add(new SelectOption('Not BANT qualified','Not BANT qualified'));
+        options.add(new SelectOption('Unable to contact','Unable to contact'));
+        options.add(new SelectOption('Not a new prospect','Not a new prospect'));
+        return options; 
+    }
+    public List<SelectOption> getdowngradeReasonOptionRingCentral() {
+        List<SelectOption> options = new List<SelectOption>();
+        options.add(new SelectOption('Bandwidth / Wiring','Bandwidth / Wiring'));
+        options.add(new SelectOption('Concerns about reliability / usability / support','Concerns about reliability / usability / support'));
+        options.add(new SelectOption('Missing critical features','Missing critical features'));
+        options.add(new SelectOption('Price','Price'));
+        options.add(new SelectOption('Reviews','Reviews'));
+        options.add(new SelectOption('Other','Other'));
+        return options; 
+    }
+    public List<SelectOption> getdowngradeReasonOptionRingATNT() {
+        List<SelectOption> options = new List<SelectOption>();
+        options.add(new SelectOption('AT&T Seller','AT&T Seller'));
+        options.add(new SelectOption('Purchase Blocker','Purchase Blocker'));
+        options.add(new SelectOption('Doesn’t have mobility number','Doesn’t have mobility number'));
+        return options;
+    }
+    public List<SelectOption> getdowngradeReasonOptionRetention() {
+        List<SelectOption> options = new List<SelectOption>();
+        options.add(new SelectOption('Retention Lead Closed','Retention Lead Closed'));
+        return options;
+    }
+    // Sub downgrade reasons
+    public List<SelectOption> getSubDowngradeReasonNotBANT() {
+        List<SelectOption> options = new List<SelectOption>();
+        options.add(new SelectOption('No Authority','No Authority'));
+        options.add(new SelectOption('Time frame greater than X months','Time frame greater than X months'));
+        options.add(new SelectOption('No Budget','No Budget'));
+        options.add(new SelectOption('No Need','No Need'));
+        return options;
+    }
+    public List<SelectOption> getSubDowngradeReasonUnableContact() {
+        List<SelectOption> options = new List<SelectOption>();
+        options.add(new SelectOption('No response','No response'));
+        options.add(new SelectOption('Went dark','Went dark'));
+        options.add(new SelectOption('Invalid phone number','Invalid phone number'));
+        return options;
+    }
+    public List<SelectOption> getSubDowngradeReasonNotNew() {
+        List<SelectOption> options = new List<SelectOption>();
+        options.add(new SelectOption('Duplicate','Duplicate'));
+        options.add(new SelectOption('Customer','Customer'));
+        options.add(new SelectOption('Partner','Partner'));
+        options.add(new SelectOption('Competitors','Competitors'));
+        options.add(new SelectOption('Vendor','Vendor'));
+        options.add(new SelectOption('Trash (eg. Fake data, student)','Trash (eg. Fake data, student)'));
+        return options;
+    }
+    public List<SelectOption> getSubDowngradeReasonBandwidth() {
+        List<SelectOption> options = new List<SelectOption>();
+        options.add(new SelectOption('Location not wired for Ethernet','Location not wired for Ethernet'));
+        options.add(new SelectOption('Not enough bandwidth','Not enough bandwidth'));
+        options.add(new SelectOption('Poor QoS test','Poor QoS test'));
+        options.add(new SelectOption('Too expensive','Too expensive'));
+        //options.add(new SelectOption('Purchase Blocker','Purchase Blocker'));
+        //options.add(new SelectOption('Doesn’t have mobility number','Doesn’t have mobility number'));
+        options.add(new SelectOption('Other (provide detailed reason)','Other (provide detailed reason)'));
+        return options;
+    }
+    public List<SelectOption> getSubDowngradeReasonConcernsAbout() {
+        List<SelectOption> options = new List<SelectOption>();
+        options.add(new SelectOption('Concerns about call quality','Concerns about call quality'));
+        options.add(new SelectOption('Concerns about onboarding process','Concerns about onboarding process'));
+        options.add(new SelectOption('Concerns about support','Concerns about support'));
+        options.add(new SelectOption('Concerns about uptime','Concerns about uptime'));
+        options.add(new SelectOption('Not user friendly','Not user friendly'));
+        options.add(new SelectOption('Other (provide detailed reason)','Other (provide detailed reason)'));
+        return options;
+    }
+    public List<SelectOption> getSubDowngradeReasonMissingCriti() {
+        List<SelectOption> options = new List<SelectOption>();
+        options.add(new SelectOption('Advanced Reporting','Advanced Reporting'));
+        options.add(new SelectOption('Call Center Functionality','Call Center Functionality'));
+        options.add(new SelectOption('Cordless Phones','Cordless Phones'));
+        options.add(new SelectOption('CRM Integration','CRM Integration'));
+        options.add(new SelectOption('High Usage Plan (SIP Trunking)','High Usage Plan (SIP Trunking)'));
+        options.add(new SelectOption('Large Account Management / UI limitations','Large Account Management / UI limitations'));
+        options.add(new SelectOption('LDAP Integration / Global company directory','LDAP Integration / Global company directory'));
+        options.add(new SelectOption('Multi – level IVR','Multi – level IVR'));
+        options.add(new SelectOption('Mobile features','Mobile features'));
+       // options.add(new SelectOption('Paging','Paging'));
+        options.add(new SelectOption('Salesforce Mac Integration','Salesforce Mac Integration'));
+       // options.add(new SelectOption('Shared Lines','Shared Lines'));
+        options.add(new SelectOption('Softphone Mac Support','Softphone Mac Support'));
+        options.add(new SelectOption('User Permission limitation','User Permission limitation'));
+        options.add(new SelectOption('Voicemail Transcription (VM to Text)','Voicemail Transcription (VM to Text)'));
+        options.add(new SelectOption('Other (provide detailed reason)','Other (provide detailed reason)'));
+        return options;
+    }
+    
+    public List<SelectOption> getSubDowngradeReasonPrice() {
+        List<SelectOption> options = new List<SelectOption>();
+        options.add(new SelectOption('Phones too expensive','Phones too expensive'));
+        options.add(new SelectOption('Service too expensive','Service too expensive'));
+        options.add(new SelectOption('Other (provide detailed reason)','Other (provide detailed reason)'));
+        return options;
+    }
+    
+    public List<SelectOption> getSubDowngradeReasonReviews() {
+        List<SelectOption> options = new List<SelectOption>();
+        options.add(new SelectOption('Facebook','Facebook'));
+        options.add(new SelectOption('Gartner','Gartner'));
+        options.add(new SelectOption('Glassdoor','Glassdoor'));
+        options.add(new SelectOption('Twitter','Twitter'));
+        options.add(new SelectOption('VoIP Review','VoIP Review'));
+        options.add(new SelectOption('Yelp','Yelp'));
+        options.add(new SelectOption('Other (provide detailed reason)','Other (provide detailed reason)'));
+        return options;
+    }
+    
+    public List<SelectOption> getWhichCXDetailOption(){
+       List<SelectOption> options = getOptionList('What_will_cx_use_for_their_phone_system__c'); 
+       List<SelectOption> optionsNew = new List<SelectOption>(); 
+       for(SelectOption sOp : options){
+            if(sOp.getValue()=='Hosted PBX' ||  sOp.getValue()=='On-Premise PBX' || sOp.getValue()=='Other' 
+                || sOp.getValue()=='Prefers not to say') {
+                optionsNew.add(new SelectOption(sOp.getValue(),sOp.getValue()));    
+            }
+       }
+       return optionsNew; 
+    }
+    
+    public List<SelectOption> getHostedPBXOption(){
+        List<SelectOption> options = new  List<SelectOption>(); //getOptionList('Hosted_PBX__c');
+        String leadId = ApexPages.currentPage().getParameters().get('Id');
+        leadObj = [select Lead_Brand_Name__c from Lead where id =: leadId];
+        getHostedPBXRCUK();
+        getHostedPBXRCandRCCanada();
+        for(SelectOption option:getOptionList('Hosted_PBX__c')){
+            if(leadObj.Lead_Brand_Name__c == 'RingCentral UK'){
+                if(setHostedPBXRCUK.contains(String.valueOf(option.getValue()))){
+                    options.add(option);
+                }
+            } else {
+                if(setHostedPBXRCandRCCanada.contains(String.valueOf(option.getValue()))){
+                    options.add(option);
+                }
+            }
+        }
+       return options; 
+    }
+    
+    public set<String> setHostedPBXRCUK{get;set;}// = new set<String>();
+    public set<String> setHostedPBXRCandRCCanada{get;set;}// = new set<String>();
+    public void getHostedPBXRCandRCCanada(){
+        setHostedPBXRCandRCCanada = new Set<String>();
+        setHostedPBXRCandRCCanada.add('8x8');
+        setHostedPBXRCandRCCanada.add('Avaya Live');
+        setHostedPBXRCandRCCanada.add('Vonage Business Services');
+        setHostedPBXRCandRCCanada.add('eVoice');
+        setHostedPBXRCandRCCanada.add('Fonality');
+        setHostedPBXRCandRCCanada.add('Jive');
+        setHostedPBXRCandRCCanada.add('Megapath');
+        setHostedPBXRCandRCCanada.add('Microsoft Lync');
+        setHostedPBXRCandRCCanada.add('Nextiva');
+        setHostedPBXRCandRCCanada.add('Phone.com');
+        setHostedPBXRCandRCCanada.add('Shoretel Sky');
+        setHostedPBXRCandRCCanada.add('Other (provide detailed reason)');
+    //return setHostedPBX;
+    }
+    
+     public void getHostedPBXRCUK(){
+        setHostedPBXRCUK = new Set<String>();
+        setHostedPBXRCUK.add('8x8');
+        setHostedPBXRCUK.add('BT');
+        setHostedPBXRCUK.add('Simple Signal');
+        setHostedPBXRCUK.add('Sipgate');
+        setHostedPBXRCUK.add('Soho66');
+        setHostedPBXRCUK.add('Vodafone - One Net');
+        setHostedPBXRCUK.add('Other (provide detailed reason)');
+    //return setHostedPBX;
+    }
+    
+    public List<SelectOption> getOnPremisePBXOption(){
+        List<SelectOption> options = getOptionList('On_Premise_PBX__c');
+        List<SelectOption> optionsNew = new List<SelectOption>(); 
+        for(SelectOption sOp : options){
+            if(sOp.getValue() != 'Barracuda' && sOp.getValue() != 'Prefers not to say') {
+                optionsNew.add(new SelectOption(sOp.getValue(),sOp.getValue()));    
+            }
+        }
+       return optionsNew; 
+    }
+    
+    public List<SelectOption> getDelayedReasonOption(){
+        List<SelectOption> options = getOptionList('Delayed_Reason__c');
+        List<SelectOption> optionsNew = new List<SelectOption>(); 
+        for(SelectOption sOp : options){
+            optionsNew.add(new SelectOption(sOp.getValue(),sOp.getValue()));    
+        }
+       return optionsNew; 
+    }
+    
+    public List<SelectOption> getOptionList(string fieldApi) {                     
+           List<SelectOption> options = new List<SelectOption>(); 
+           try{
+            Schema.sObjectType sobjectType = Lead.getSObjectType(); 
+            Schema.DescribeSObjectResult sobjectDescribe = sobjectType.getDescribe(); 
+            Map<String, Schema.SObjectField> fieldMap = sobjectDescribe.fields.getMap(); 
+            List<Schema.PicklistEntry> pickListValues = fieldMap.get(fieldApi).getDescribe().getPickListValues(); 
+            for (Schema.PicklistEntry picklstval : pickListValues) { 
+                options.add(new selectOption(picklstval.getvalue(), picklstval.getvalue())); 
+            }
+        } catch(Exception ex) { }
+       return options; 
+    }
+    
+    public void checkIsRecordTypePermitted(string recordTypeID) {
+        try {
+            if(recordTypeID != null && recordTypeID != '') {
+                Schema.DescribeSObjectResult result = Lead.SObjectType.getDescribe();
+                Map<ID,Schema.RecordTypeInfo> rtMapByName = result.getRecordTypeInfosById();
+                map<string,Lead_Opp_Downgrade_RT__c> csMap  = Lead_Opp_Downgrade_RT__c.getAll();
+                if(csMap != null && csMap.containsKey(rtMapByName.get(recordTypeID).getName())) {
+                    toShowMainPanel = true; 
+                } else {
+                    ApexPages.addMessage(new ApexPages.Message(ApexPages.Severity.ERROR, 'Invalid Record Type.'));
+                }
+            } else {
+                toShowMainPanel = true;
+            }
+        } catch(Exception ex) {}    
+     }
+}
