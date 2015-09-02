@@ -1,0 +1,106 @@
+/*******************************************Update Most Recent Campaign on Lead****************************************/
+    public static set<String> updateMostRecentCampaign(List<Lead> newLeadList,map<id,lead> oldLeadMap,Map<ID,Schema.RecordTypeInfo> rtMapByName){
+        Set<string> UniqueCombinationSet = new Set<string>();
+        List<Lead> updatedLeadList = new List<Lead>();
+        Set<String> campaignIdSet = new Set<String>();
+        List<CampaignWrapper> camWrapperList = new List<CampaignWrapper>();
+        try{
+            for(Lead leadObj : newLeadList){                
+                if((leadObj.BMID__c!=null && leadObj.BMID__c != oldLeadMap.get(leadObj.Id).BMID__c) ||
+                    (leadObj.AID__c!=null && leadObj.AID__c != oldLeadMap.get(leadObj.Id).AID__c) ||
+                    (leadObj.PID__c!=null && leadObj.PID__c != oldLeadMap.get(leadObj.Id).PID__c) ||
+                    (leadObj.Five9_DNIS__c!=null && leadObj.Five9_DNIS__c != oldLeadMap.get(leadObj.Id).Five9_DNIS__c)) {                   
+                    map<String,boolean> fieldUpdateMap = new map<String,boolean>{'BMID'=>false,'AID'=>false,'PID'=>false,'DNIS'=>false};
+                    if(leadObj.BMID__c != oldLeadMap.get(leadObj.Id).BMID__c){  
+                        fieldUpdateMap.put('BMID',true);    
+                    }
+                    if(leadObj.AID__c != oldLeadMap.get(leadObj.Id).AID__c){
+                        fieldUpdateMap.put('AID',true);
+                    }
+                    if(leadObj.PID__c != oldLeadMap.get(leadObj.Id).PID__c){
+                        fieldUpdateMap.put('PID',true);
+                    }
+                    if(leadObj.Five9_DNIS__c != oldLeadMap.get(leadObj.Id).Five9_DNIS__c){
+                        fieldUpdateMap.put('DNIS',true);
+                    }
+                    if(fieldUpdateMap!=null && fieldUpdateMap.get('BMID')!=null && fieldUpdateMap.get('BMID')==false){
+                        leadObj.BMID__c = '';
+                    }
+                    if(fieldUpdateMap!=null && fieldUpdateMap.get('AID')!=null && fieldUpdateMap.get('AID')==false){
+                        leadObj.AID__c = '';
+                    }
+                    if(fieldUpdateMap!=null && fieldUpdateMap.get('PID')!=null && fieldUpdateMap.get('PID')==false){
+                        leadObj.PID__c = '';
+                    }
+                    if(fieldUpdateMap!=null && fieldUpdateMap.get('DNIS')!=null && fieldUpdateMap.get('DNIS')==false){
+                        leadObj.Five9_DNIS__c = '';
+                    }                   
+                    updatedLeadList.add(leadObj);
+                    campaignIdSet.add(leadObj.Most_Recent_Campaign__c); 
+                    boolean isPartnerLead = false;
+                    if((leadObj.RecordTypeId!=null && rtMapByName.get(leadObj.RecordTypeId).getName() == 'Partner Leads')){
+                      isPartnerLead = true;
+                    }
+                    camWrapperList.add(new CampaignWrapper(leadObj.AID__c, leadObj.BMID__c, leadObj.PID__c, leadObj.Five9_DNIS__c,
+                                        null,isPartnerLead));
+                                                           
+                } else if((leadObj.BMID__c != oldLeadMap.get(leadObj.Id).BMID__c) ||
+                    (leadObj.AID__c != oldLeadMap.get(leadObj.Id).AID__c) ||
+                    (leadObj.PID__c != oldLeadMap.get(leadObj.Id).PID__c) ||
+                    (leadObj.Five9_DNIS__c != oldLeadMap.get(leadObj.Id).Five9_DNIS__c)){
+                        updatedLeadList.add(leadObj);
+                        boolean isPartnerLead = false;
+                      if((leadObj.RecordTypeId!=null && rtMapByName.get(leadObj.RecordTypeId).getName() == 'Partner Leads')){
+                        isPartnerLead = true;
+                      }
+                        campaignIdSet.add(leadObj.Most_Recent_Campaign__c); 
+                        camWrapperList.add(new CampaignWrapper(leadObj.AID__c, leadObj.BMID__c, leadObj.PID__c, leadObj.Five9_DNIS__c,
+                                        null,isPartnerLead));   
+                } else {
+                  campaignIdSet.add(leadObj.Most_Recent_Campaign__c);
+                }
+            }
+            
+            if(updatedLeadList!=null && updatedLeadList.size() > 0){
+                List<Lead> brokenLeadList = new List<Lead>();
+                List<Lead> trueWalkOnLeadList = new List<Lead>();
+                Map<String, Campaign> criteriaToCamapaignMap = CampaignAssignmentHelper.findCampaingsLogic(camWrapperList);
+                for(Lead leadObj : updatedLeadList){
+                    if(String.isBlank(leadObj.AID__c) && String.isBlank(leadObj.PID__c) && String.isBlank(leadObj.BMID__c) && String.isBlank(leadObj.Five9_DNIS__c) ){
+                        trueWalkOnLeadList.add(leadObj);
+                    }else{
+                        Campaign campaignObj = CampaignAssignmentHelper.getLeadCampaignLogic(new CampaignWrapper(leadObj.AID__c, leadObj.BMID__c, leadObj.PID__c, leadObj.Five9_DNIS__c,null, (leadObj.RecordTypeId == OpportunityHelper.getOppRecordTypeMap('Partner Leads'))), criteriaToCamapaignMap);
+                        if(campaignObj != null && campaignObj.Name!='Default Campaign') {
+                            leadObj.Primary_Campaign__c = campaignObj.Id;
+                            leadObj.Most_Recent_Campaign__c = campaignObj.Id;   
+                            campaignIdSet.add(leadObj.Most_Recent_Campaign__c);            
+                        }else{
+                            brokenLeadList.add(leadObj);                        
+                        }
+                    }
+                }
+                
+                Map<String, Campaign> campaignMap = new Map<String, Campaign>();
+                
+                if(trueWalkOnLeadList!=null && trueWalkOnLeadList.size() > 0){                  
+                    LeadTriggerHelperExt.assignCampaignToList('True Walk-On',trueWalkOnLeadList,campaignMap);                    
+                    for(String campaignId : campaignMap.keySet()){
+                      campaignIdSet.add(campaignId);
+                    }
+                }
+                
+                if(brokenLeadList!=null && brokenLeadList.size() > 0){
+                  campaignMap = new Map<String, Campaign>();
+                    LeadTriggerHelperExt.assignCampaignToList('Broken Attribution',brokenLeadList,campaignMap);                    
+                    for(String campaignId : campaignMap.keySet()){
+                      campaignIdSet.add(campaignId);
+                    }
+                }
+            }
+        }catch(exception e){
+            System.debug('==Exception=='+e.getMessage()+'==Line=='+e.getLineNumber());
+        }
+        
+        return campaignIdSet;
+    }
+    /**************************************************End of Update Most Recent Campaign on Lead**************************************/ 
