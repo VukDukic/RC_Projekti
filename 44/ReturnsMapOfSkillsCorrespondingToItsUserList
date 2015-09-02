@@ -1,0 +1,15 @@
+  /**************************************Returns Map of Skills corresponding to its User List**************************************/
+    public static Map<Id, List<User_Skill__c>> getSkillsToUserSkillsMap(Set<Id> skillIds) {
+        Map<Id, List<User_Skill__c>> skillsToUserSkills = new Map<Id, List<User_Skill__c>>();
+        for(User_Skill__c userSkill : [SELECT Id, User__c,Name, Skill__c,User__r.Name, Skill__r.Name, IsLeadAssigned__c, User__r.Department, User__r.Email, User__r.Phone  From User_Skill__c WHERE Skill__c IN : skillIds
+                                                AND User__r.IsActive = true ORDER BY Id DESC]) {
+               List<User_Skill__c> userSkillList = new  List<User_Skill__c>();
+               if(skillsToUserSkills.get(userSkill.Skill__c) != null) {
+                    userSkillList = skillsToUserSkills.get(userSkill.Skill__c);
+               }
+               userSkillList.add(userSkill);
+               skillsToUserSkills.put((Id)userSkill.Skill__c, userSkillList); 
+        }
+        return skillsToUserSkills;                                     
+    }
+    /************************************************************************************************************************************/
