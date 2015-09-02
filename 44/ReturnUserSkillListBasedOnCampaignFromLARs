@@ -1,0 +1,43 @@
+/*****************************************Return USER SKILL List Based on CAMPAIGN from LARs*********************************/
+    public static List<User_Skill__c> getUserSkillsPerCampaign(Lead leadObj, Campaign campaignObj, 
+                                        List<Lead_Assignment_Rules__c> larList, Map<Id, List<User_Skill__c>> skillsToUserSkills, 
+                                        List<Id> finalSkillList, String customerSize, Map<Id, Skill__c> skillsMap,
+                                        Map<Id, Skill__c> finalSkillMap ) {
+        List<User_Skill__c> allUserSkills = new List<User_Skill__c>();
+        if(campaignObj != null && campaignObj.Name != 'Default Campaign') {
+            List<Lead_Assignment_Rules__c> larFinalList = new List<Lead_Assignment_Rules__c>(); 
+            for(Lead_Assignment_Rules__c larObj : larList) {
+                if(larObj.Campaign__c != null){
+                    if(larObj.Campaign__c == campaignObj.Id 
+                        && ( larObj.Customer_Employee_Size__c == null
+                        || larObj.Customer_Employee_Size__c.containsIgnoreCase(customerSize))){                     
+                        try {     
+                            if(larObj.Skill__c != null 
+                                    && skillsToUserSkills.get(larObj.Skill__c) != null 
+                                    && skillsToUserSkills.get(larObj.Skill__c).size() != 0) {
+                                if(finalSkillMap.get(larObj.Skill__c) == null) {
+                                    larFinalList.add(larObj);
+                                    finalSkillList.add(larObj.Skill__c); 
+                                    finalSkillMap.put(larObj.Skill__c, skillsMap.get(larObj.Skill__c));
+                                    leadObj.LAR_Source__c = 'LAR PER CAMPAIGN';
+                                    break;
+                                } 
+                            }
+                        } catch(System.Exception e){
+                            leadObj.OwnerId = '005800000036sJJ';
+                        }                               
+                    }
+                }
+            }
+            for(Lead_Assignment_Rules__c larObj: larFinalList) {
+                if(larObj != null && larObj.Skill__c != null) {
+                    List<User_Skill__c> userSkills = skillsToUserSkills.get((Id)larObj.Skill__c);
+                    if(userSkills != null && userSkills.size() != 0) {
+                        allUserSkills.addAll(userSkills);
+                    } 
+                }
+            }
+        }
+        return allUserSkills;
+    }
+    /*************************************************************************************************************************************/
