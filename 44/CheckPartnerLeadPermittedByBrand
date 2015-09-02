@@ -1,0 +1,29 @@
+  /******************************************Check Partner Lead Permitted By Brand***************************************/
+    public static void checkPartnerLeadPermittedByBrand(List<Lead> newLeadList, map<Id,Lead> leadoldMap, map<string,List<string>> approvedBrandListMap,
+                              Map<ID,Schema.RecordTypeInfo> rtMapByName) {
+        boolean isBrandPermitted = false;
+        try {
+            if(newLeadList != null ) { //&& newLeadList.size() == 1
+                for(Lead newLead : newLeadList) {
+                    isBrandPermitted = false;
+                    if(newLead.RecordTypeId != null && rtMapByName != null && rtMapByName.get(newLead.RecordTypeId).getName() == 'Partner Leads' &&
+                        approvedBrandListMap != null && newLead.LeadPartnerID__c != null && 
+                        approvedBrandListMap.get(newLead.LeadPartnerID__c) != null && newLead.Lead_Brand_Name__c != null && 
+                        (leadoldMap == null || leadoldMap.get(newLead.id).Lead_Brand_Name__c != newLead.Lead_Brand_Name__c)) {
+                        for(string strBrand : approvedBrandListMap.get(newLead.LeadPartnerID__c)) {
+                            if(strBrand.trim() == newLead.Lead_Brand_Name__c) {  
+                                isBrandPermitted = true;
+                                break;
+                            }
+                        }
+                        if(isBrandPermitted == false) {
+                            newLead.AddError('You are not permitted to sell this Brand. '+
+                                                'Please contact <a style="font-size:12px;" '+
+                                                'href=mailto:resellers@ringcentral.com>resellers@ringcentral.com</a> to gain access to this Brand.');
+                        }
+                    }   
+                }
+            }
+        } catch(Exception ex) {}
+    }
+    /**********************************************************************************************************************/
