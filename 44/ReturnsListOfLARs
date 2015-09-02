@@ -1,0 +1,13 @@
+ /****************************************************Returns List of LARs*******************************************************/
+    public static List<Lead_Assignment_Rules__c> getLarWithSkills(Boolean IsSecondary) {
+        if(IsSecondary == false) {
+            return [SELECT Skill__r.GlobalUserSkillIndex__c, Skill__r.Name, Skill__r.CurrentUserIndex__c,Skill__r.OptyIndex__c,Skill__r.ContactIndex__c, Skill__c, 
+            NextUserSkillIndex__c, Name, Lead_Source__c, Lead_Score__c, Lead_Folder__c,Folder__c, Id, Lead_Entry_Source__c,
+            GlobalUserSkillIndex__c, Customer_Size__c, Customer_Employee_Size__c, Campaign__c From Lead_Assignment_Rules__c WHERE IsSecondary__c!=true ORDER BY Id DESC];
+        } else {
+            return [SELECT Skill__r.GlobalUserSkillIndex__c, Skill__r.Name, Skill__r.CurrentUserIndex__c,Skill__r.OptyIndex__c,Skill__r.ContactIndex__c, Skill__c, 
+            NextUserSkillIndex__c, Name, Lead_Source__c, Lead_Score__c, Lead_Folder__c,Folder__c, Id, Lead_Entry_Source__c,
+            GlobalUserSkillIndex__c, Customer_Size__c, Customer_Employee_Size__c, Campaign__c From Lead_Assignment_Rules__c WHERE IsSecondary__c=true ORDER BY Id DESC];
+        }
+    }
+    /********************************************************************************************************************************/
