@@ -1,0 +1,12 @@
+ /************************************Return Number OF Employee Picklist Values of Lead**********************************************/
+    public static Set<string> getPicklistValue(){       
+        Set<String> ranges = new Set<String>();
+        Schema.DescribeFieldResult numberOfEmployees = Lead.NumberOfEmployees__c.getDescribe();
+        List<Schema.PicklistEntry> numberOfEmployeesRange = numberOfEmployees.getPicklistValues();
+        for(Schema.PicklistEntry schObj : numberOfEmployeesRange){
+            ranges.add(schObj.getValue());
+        }     
+        return ranges;         
+    }
+    /**********************************************************************************************************************************/
+    
