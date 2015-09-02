@@ -1,0 +1,23 @@
+ /********************************************Format Phone Number as per New Format Logic**********************************************/
+    public static void arrangePhoneNumber(Lead leadObj) {
+        if(leadObj.Phone!=null){                        
+            if(leadObj.Country!=null){   
+                if(('Great Britain'.equalsIgnoreCase(leadObj.Country) || 'United Kingdom'.equalsIgnoreCase(leadObj.Country) || 
+                    'GB'.equalsIgnoreCase(leadObj.Country) || 'UK'.equalsIgnoreCase(leadObj.Country))){
+                    leadObj.Phone = ValidationUtility.validatePhoneNumber(leadObj.Phone.trim(), 'UK');
+                }else{
+                    leadObj.Phone = ValidationUtility.validatePhoneNumber(leadObj.Phone.trim(), '');
+                }
+            }else{
+                if(leadObj.Phone.trim().startsWith('+44') || leadObj.Phone.trim().startsWith('44') || leadObj.Phone.trim().startsWith('0')){
+                    leadObj.Phone = ValidationUtility.validatePhoneNumber(leadObj.Phone.trim(), 'UK');
+                }else {
+                    leadObj.Phone = ValidationUtility.validatePhoneNumber(leadObj.Phone.trim(), '');
+                }
+            }
+        }
+        // Set indexed fields so they can be used in duplicate searching
+        leadObj.indexedPhone__c = leadObj.Phone;
+        leadObj.indexedEmail__c = leadObj.email;
+    }   
+    /*************************************************************************************************************************************/
