@@ -1,0 +1,7 @@
+   /****************************************************Returns Skill Map****************************************************************/
+    public static Map<Id, Skill__c> getSkillsMap(List<Id> skillIds) {
+        return (skillIds == null || skillIds.size() == 0 ? new Map<Id, Skill__c>() : 
+        new Map<Id, Skill__c>([SELECT Id, Name, CurrentUserIndex__c, GlobalUserSkillIndex__c, 
+        (SELECT Id, Name FROM Lead_Assignment_Rules__r ORDER BY Id DESC) FROM Skill__c WHERE Id IN: skillIds]));
+    }
+    /*************************************************************************************************************************************/
