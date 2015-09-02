@@ -1,0 +1,21 @@
+ /*******************************************Check LeadName Custom Setting for Test Leads*****************************************/    
+    public static Map<String, Boolean> getLeadOwnerRCSFsync(List<Lead> leadList) {
+        Map<String, Boolean> resultMap = new Map<String, Boolean>();
+        try {
+            List<LeadName__C> lstLeadName = LeadName__C.getAll().values();
+            for(Lead leadObj : leadList) {
+                resultMap.put(leadObj.FirstName + '_' + leadObj.LastName, false);
+                for(LeadName__C objLeadName:lstLeadName){
+                    if(!string.isBlank(leadObj.FirstName) && !string.isBlank(leadObj.LastName)&& 
+                        ((leadObj.FirstName).equalsIgnoreCase(objLeadName.First_Name__c)
+                            &&(leadObj.LastName).equalsIgnoreCase(objLeadName.Last_Name__c))){
+                        leadObj.OwnerId = RCSF_SYNC;
+                        //leadObj.Assignment_Source_hidden__c = 'Custom Settings';
+                        resultMap.put(leadObj.FirstName + '_' + leadObj.LastName, true);
+                    } 
+                }
+            }
+        } catch(Exception x) {}
+        return resultMap;
+    }
+    /********************************************************************************************************************************/
