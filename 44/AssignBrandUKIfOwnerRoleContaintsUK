@@ -1,0 +1,31 @@
+ /***********************************Assign Brand UK if Owner Role contains UK ******************************************************/
+    public static void assignBrand(List<Lead> leadList){
+    Set<Id> setOwnerId = new Set<Id>();
+        for(Lead leadObj : leadList) {
+            setOwnerId.add(leadObj.ownerID);
+        }
+        Map<Id,User> userRoleMap = new Map<Id,User>([SELECT id,UserRoleId, UserRole.Name, Name FROM User WHERE Id IN :setOwnerId]);
+        for(Lead leadObj : leadList) {           
+            //New Updation as per Original Owner Detail requirement.
+            if(userRoleMap != null && leadObj.OwnerId != null && userRoleMap.get(leadObj.OwnerId) != null){
+                //For Storing Original Owner Details.
+                if(!userRoleMap.get(leadObj.OwnerId).Name.equalsIgnoreCase('LAR System User')){
+                    leadObj.Original_Lead_Owner_Id__c = leadObj.OwnerId;
+                    leadObj.Original_Lead_Owner_Name__c = userRoleMap.get(leadObj.OwnerId).Name;
+                }                       
+                if(userRoleMap.get(leadObj.OwnerId).UserRole.Name != null) {
+                    String[] strRoleSplit = userRoleMap.get(leadObj.OwnerId).UserRole.Name.split(' ');
+                    if(strRoleSplit != null && strRoleSplit.size()>0) {   
+                        for(string strBrand : strRoleSplit) {
+                            if(strBrand.equalsIgnoreCase('UK')) {
+                                leadObj.Lead_Brand_Name__c = 'RingCentral UK';
+                                break;  
+                            }
+                        }
+                    } 
+                }                      
+            }
+        }
+    } 
+    /*******************************************************************************************************************/
+}
