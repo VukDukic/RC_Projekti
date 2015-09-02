@@ -1,0 +1,8 @@
+lead l = new lead();
+l.salutation = "Mr.";
+l.firstname = "Vuk";
+l.lastname = "Dukic";
+l.company = "RingCentral";
+l.title = "";
+l.leadsource = "";
+l.
