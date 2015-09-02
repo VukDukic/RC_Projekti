@@ -1,0 +1,30 @@
+  /***************************Returns map of Approved Brand List based on Account PartnerId******************************/
+    public static map<string,List<string>> getApprovedBrandList(List<Lead> newLeadList) {
+        map<string,List<string>> approvedBrandListMap = new map<string,List<string>>();
+        try {
+            if(UserInfo.getUserType() == 'PowerPartner') {
+                User userObjDetails = [select Contact.Account.Permitted_Brands__c,Contact.Account.Partner_ID__c 
+                                            from User where id = :UserInfo.getUserId()];
+                if(userObjDetails != null && userObjDetails.Contact.Account.Permitted_Brands__c != null &&
+                    userObjDetails.Contact.Account.Partner_ID__c != null) {
+                    approvedBrandListMap.put(userObjDetails.Contact.Account.Partner_ID__c,
+                                                userObjDetails.Contact.Account.Permitted_Brands__c.split(';'));
+                }   
+            } else {
+                set<string> partnerIdSet = new set<string>();
+                for(Lead leadObj: newLeadList) {
+                    if(!string.isBlank(leadObj.LeadPartnerID__c)) {
+                        partnerIdSet.add(leadObj.LeadPartnerID__c);
+                    }
+                }
+                for(Account accObj : [select Permitted_Brands__c,Partner_ID__c from Account where RecordType.Name = 'Partner Account' 
+                                        and Partner_ID__c IN :partnerIdSet]) {
+                    if(accObj.Permitted_Brands__c != null) {
+                        approvedBrandListMap.put(accObj.Partner_ID__c,accObj.Permitted_Brands__c.split(';'));       
+                    }                       
+                }
+            }
+        } catch(Exception ex) {}
+        return approvedBrandListMap;  
+    }
+    /**********************************************************************************************************************/
