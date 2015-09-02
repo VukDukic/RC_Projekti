@@ -1,0 +1,26 @@
+ /*****************************Helper Method Called from "updateMostRecentCampaign" Method*****************************************/
+    public static string createUniqueCombination(String BMID, String AID, String PID, String DNIS){
+        String strUniqueCombination = '';
+        if(BMID!=null && BMID!=''){
+            strUniqueCombination+=BMID;
+        }else{
+            strUniqueCombination+='NULL';
+        }
+        if(AID!=null && AID!=''){
+            strUniqueCombination+='-'+AID;
+        }else{
+            strUniqueCombination+='-NULL';
+        }
+        if(PID!=null && PID!=''){
+            strUniqueCombination+='-'+PID;
+        }else{
+            strUniqueCombination+='-NULL';
+        }
+        if(DNIS!=null && DNIS!=''){
+            strUniqueCombination+='-'+DNIS;
+        }else{
+            strUniqueCombination+='-NULL';
+        }       
+        return strUniqueCombination;
+    }
+    /***********************************************************************************************************************************/
