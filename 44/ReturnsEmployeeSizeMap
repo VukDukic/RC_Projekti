@@ -1,0 +1,25 @@
+ /***************************************Returns Employee Size Map*****************************************************************/
+    public static Map<String, String> getCustomerSize(List<Lead> leadList) {
+        Map<String, String> empToCustomerSizeMap = new Map<String, String>();
+        
+        Set<String> ranges = new Set<String>();
+        Schema.DescribeFieldResult numberOfEmployees = Lead.NumberOfEmployees__c.getDescribe();
+        List<Schema.PicklistEntry> numberOfEmployeesRange = numberOfEmployees.getPicklistValues();
+        for(Schema.PicklistEntry schObj : numberOfEmployeesRange) {
+            ranges.add(schObj.getValue());
+        }
+        for(Lead leadObj : leadList) {
+            String customerSize = '2-9';
+            /*if(!String.isBlank(leadObj.NumberOfEmployees__c) && ranges.contains(leadObj.NumberOfEmployees__c)) {
+                customerSize = leadObj.NumberOfEmployees__c;
+            }*/
+            if(!String.isBlank(leadObj.Effective_No_of_Employees_Range__c) && ranges.contains(leadObj.Effective_No_of_Employees_Range__c)) {
+                customerSize = leadObj.Effective_No_of_Employees_Range__c;
+            }
+            
+            //empToCustomerSizeMap.put((String.isBlank(leadObj.NumberOfEmployees__c) ? 'DEFAULT' : leadObj.NumberOfEmployees__c), customerSize);
+            empToCustomerSizeMap.put((String.isBlank(leadObj.Effective_No_of_Employees_Range__c) ? 'DEFAULT' : leadObj.Effective_No_of_Employees_Range__c), customerSize);
+        }
+        return empToCustomerSizeMap;
+    }
+    /*************************************************************************************************************************************/
