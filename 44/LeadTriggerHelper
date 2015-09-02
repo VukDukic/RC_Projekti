@@ -1,0 +1,857 @@
+/*
+  This is a Helper Class which is used for following purposes :
+    UDPATE LEAD ACTIVE DATE BASED ON OWNER AND STATUS
+    Check LeadName Custom Setting for Test Leads
+    Returns List of LARs
+    Returns Map of Skills corresponding to its User List
+    Return Account Maps if Lead is SOLVE THEN SELL
+    Return Number OF Employee Picklist Values of Lead
+    Returns Employee Size Map
+    ASSIGN LEAD SOURCE BASED ON CONDITIONS
+    Return USER SKILL List Based on LEAD ENTRY SOURCE from LARs
+    Return USER SKILL List Based on CAMPAIGN from LARs
+    Return USER SKILL List Based on LEAD SOURCE from LARs
+    Assign Lead owner and update Skill Counter Based on Skill found by LARs
+    Format Phone Number as per New Format Logic
+    Update Lead Owner Manager Fields
+    UPDATE ULIMATE PARTNER ACCOUNT INTO LEAD ON INSERT-UPDATE
+    Returns map of Approved Brand List based on Account PartnerId
+    Check Partner Lead Permitted By Brand
+    UPDATE Partner_Account_Current_Owner_Email__c Field of Lead
+    Update Most Recent Campaign on Lead
+    Assign Brand UK if Owner Role contains UK    
+*/
+
+public class LeadTriggerHelper {
+  
+  /**************************************************STATIC VARIABLE DECLARATION*********************************************************/
+    public static final Id RCSF_SYNC = '005800000036sJJ';
+    public static Boolean triggerToByPassConvertLead = false;
+    public static Boolean isRealUser = false;
+    public static Boolean canUpdateActiveDate = false;
+    public static Map<String,Boolean> invalidStatusMap = new Map<String,Boolean>{'0. Downgraded'=>true,'X. Open'=>true,'X. Suspect'=>true};
+    private static final String BT_BUSINESS;
+  
+  static{
+    if(!Test.isRunningTest()){
+      BT_BUSINESS = RcDealHealper.getBTBrand();
+    }else{
+      BT_BUSINESS = 'BT Business';
+    }
+  }
+    public static void byPassTrgrsAtConvertLead() {
+        triggerToByPassConvertLead = true;
+    }
+    public static String PARTNER_CAMPAIGN_NAME = 'Partner Lead Campaign';
+    /**************************************************************************************************************************************/
+    
+    /**********************************UDPATE LEAD ACTIVE DATE BASED ON OWNER AND STATUS****************************************************/
+    public static void updateLeadActiveDate(List<Lead> newLeadList,Map<Id,Lead> leadOldMap) {
+        try {
+            map<string,string> mapCSProtectionLeadUser = new map<string,string>();
+            for(ProtectionLeadUsers__c csObj : [SELECT UserId__c FROM ProtectionLeadUsers__c where UserId__c != null]) {
+                if(csObj.UserId__c.length() > 15) {
+                    mapCSProtectionLeadUser.put(csObj.UserId__c.subString(0,15),csObj.UserId__c.subString(0,15));
+                } else {
+                    mapCSProtectionLeadUser.put(csObj.UserId__c,csObj.UserId__c);
+                }           
+            }
+             
+            for(Lead newLeadObj : newLeadList) {
+                Lead oldLeadObj = leadOldMap != null ? leadOldMap.get(newLeadObj.id) : null;
+                isRealUser = false;
+                canUpdateActiveDate = false;
+                String ownerId18Dig = newLeadObj.OwnerId;
+                String ownerId15Dig = '';
+                if(ownerId18Dig !='' && ownerId18Dig.length() >15){
+                    ownerId15Dig = ownerId18Dig.subString(0,15);
+                }
+                if(mapCSProtectionLeadUser != null && mapCSProtectionLeadUser.get(ownerId15Dig) == null) {
+                    isRealUser = true;
+                }
+                Boolean invalidNewStatus = (invalidStatusMap.get(newLeadObj.status)== null ? false : true);
+                Boolean invalidOldStatus = (oldLeadObj != null && invalidStatusMap.get(oldLeadObj.status)== null ? false : true);       
+                Boolean isOwnerChanged = (oldLeadObj == null || oldLeadObj.ownerId == newLeadObj.ownerId) ? false : true;
+                
+                String newStatus = newLeadObj.status;
+                String oldStatus = (oldLeadObj == null ? null : oldLeadObj.status);  
+                
+                if(oldLeadObj == null) { // Insert
+                    if(!isRealUser && !invalidNewStatus) { // Owner [System User] and Status [Valid]
+                        canUpdateActiveDate = false;
+                    } else if(!isRealUser && invalidNewStatus) { // Owner [System User] and Status [Invalid]
+                        canUpdateActiveDate = false;
+                    } else if(isRealUser && !invalidNewStatus) { // Owner [Real User] and Status [Valid]
+                        canUpdateActiveDate = true;
+                    } else if(isRealUser && invalidNewStatus) { // Owner [Real User] and Status [Invalid]
+                        canUpdateActiveDate = false;
+                    }
+                } else { // Update
+                    if(isRealUser && !isOwnerChanged && !invalidOldStatus && !invalidNewStatus && (newStatus != oldStatus)) {// Owner Unchanged [Real User] and Status Changed [Valid -> Valid]
+                        canUpdateActiveDate = false;
+                    } else if(isRealUser && isOwnerChanged && !invalidOldStatus && !invalidNewStatus && (newStatus != oldStatus)) {// Owner Changed [Real to Real] and Status Changed [Valid -> Valid]
+                        canUpdateActiveDate = true;
+                    } else if(isRealUser && !isOwnerChanged && !invalidNewStatus && (newStatus == oldStatus)) {//Owner Changed [Real to Real] and Status Unchanged [Valid]
+                        canUpdateActiveDate = true;
+                    } else if(!isRealUser && !isOwnerChanged && invalidOldStatus && !invalidNewStatus) { // Owner Unchanged [System User] and Status Changed [InValid -> Valid]
+                        canUpdateActiveDate = false;
+                    } else if(!isRealUser && !isOwnerChanged && invalidOldStatus && invalidNewStatus) { // Owner Unchanged [System User] and Status Changed [InValid -> Invalid]
+                        canUpdateActiveDate = false;
+                    } else if(!isRealUser && !isOwnerChanged && !invalidOldStatus && invalidNewStatus) { // Owner Unchanged [System User] and Status Changed [Valid -> InValid]
+                        canUpdateActiveDate = false;
+                    } else if(!isRealUser && !isOwnerChanged && !invalidOldStatus && !invalidNewStatus) {// Owner Unchanged [System User] and Status Changed [Valid -> Valid]
+                        canUpdateActiveDate = false;
+                    } else if(isRealUser && isOwnerChanged && invalidNewStatus && (newStatus == oldStatus)) {// Owner Changed [Real User] and Status Unchanged [InValid]
+                        canUpdateActiveDate = false;
+                    } else if(isRealUser && isOwnerChanged && !invalidNewStatus && (newStatus == oldStatus)) {// Owner Changed [Real User] and Status Unchanged [Valid]
+                        canUpdateActiveDate = true;
+                    } else if(isRealUser && isOwnerChanged && !invalidNewStatus && invalidOldStatus 
+                                                                                && (newStatus != oldStatus)) {// Owner Changed [Real User] and Status Changed [InValid -> Valid]
+                        canUpdateActiveDate = true;
+                    } else if(isRealUser && isOwnerChanged && invalidNewStatus && invalidOldStatus 
+                                                                                && (newStatus != oldStatus)) {// Owner Changed [Real User] and Status Changed [Invalid -> InValid]
+                        canUpdateActiveDate = false;
+                    } else if(isRealUser && isOwnerChanged && invalidNewStatus && !invalidOldStatus 
+                                                                                && (newStatus != oldStatus)) {// Owner Changed [Real User] and Status Changed [Valid -> InValid]
+                        canUpdateActiveDate = false;
+                    } else if(isRealUser && isOwnerChanged && !invalidNewStatus && !invalidOldStatus 
+                                                                                && (newStatus != oldStatus)) {// Owner Changed [Real User] and Status Changed [Valid -> Valid]
+                        canUpdateActiveDate = true;
+                    } else if(!isRealUser && isOwnerChanged && invalidNewStatus && !invalidOldStatus 
+                                                                                && (newStatus != oldStatus)) {// Owner Changed [System User] and Status Changed [Valid -> InValid]
+                        canUpdateActiveDate = false;
+                    } else if(!isRealUser && isOwnerChanged && !invalidNewStatus && invalidOldStatus 
+                                                                                 && (newStatus != oldStatus)) {// Owner Changed [System User] and Status Changed [InValid -> Valid]
+                        canUpdateActiveDate = false;
+                    } else if(!isOwnerChanged && (newStatus == oldStatus)) { // Owner Unchaged and Status Unchanged
+                        canUpdateActiveDate = false;
+                    } else if(isRealUser && !isOwnerChanged && invalidOldStatus && !invalidNewStatus && (newStatus != oldStatus)){// Owner Unchanged [Real User] and Status Changed [Invalid -> Valid]
+                        canUpdateActiveDate = true;
+                    }
+                }
+                if(canUpdateActiveDate == true){
+                    newLeadObj.Lead_Active_Date__c = System.now();
+                }   
+            }
+        } catch(Exception ex) {}
+    }
+    /**********************************************************************************************************************************/
+    
+    /*******************************************Check LeadName Custom Setting for Test Leads*****************************************/    
+    public static Map<String, Boolean> getLeadOwnerRCSFsync(List<Lead> leadList) {
+        Map<String, Boolean> resultMap = new Map<String, Boolean>();
+        try {
+            List<LeadName__C> lstLeadName = LeadName__C.getAll().values();
+            for(Lead leadObj : leadList) {
+                resultMap.put(leadObj.FirstName + '_' + leadObj.LastName, false);
+                for(LeadName__C objLeadName:lstLeadName){
+                    if(!string.isBlank(leadObj.FirstName) && !string.isBlank(leadObj.LastName)&& 
+                        ((leadObj.FirstName).equalsIgnoreCase(objLeadName.First_Name__c)
+                            &&(leadObj.LastName).equalsIgnoreCase(objLeadName.Last_Name__c))){
+                        leadObj.OwnerId = RCSF_SYNC;
+                        //leadObj.Assignment_Source_hidden__c = 'Custom Settings';
+                        resultMap.put(leadObj.FirstName + '_' + leadObj.LastName, true);
+                    } 
+                }
+            }
+        } catch(Exception x) {}
+        return resultMap;
+    }
+    /********************************************************************************************************************************/
+    
+    /****************************************************Returns List of LARs*******************************************************/
+    public static List<Lead_Assignment_Rules__c> getLarWithSkills(Boolean IsSecondary) {
+        if(IsSecondary == false) {
+            return [SELECT Skill__r.GlobalUserSkillIndex__c, Skill__r.Name, Skill__r.CurrentUserIndex__c,Skill__r.OptyIndex__c,Skill__r.ContactIndex__c, Skill__c, 
+            NextUserSkillIndex__c, Name, Lead_Source__c, Lead_Score__c, Lead_Folder__c,Folder__c, Id, Lead_Entry_Source__c,
+            GlobalUserSkillIndex__c, Customer_Size__c, Customer_Employee_Size__c, Campaign__c From Lead_Assignment_Rules__c WHERE IsSecondary__c!=true ORDER BY Id DESC];
+        } else {
+            return [SELECT Skill__r.GlobalUserSkillIndex__c, Skill__r.Name, Skill__r.CurrentUserIndex__c,Skill__r.OptyIndex__c,Skill__r.ContactIndex__c, Skill__c, 
+            NextUserSkillIndex__c, Name, Lead_Source__c, Lead_Score__c, Lead_Folder__c,Folder__c, Id, Lead_Entry_Source__c,
+            GlobalUserSkillIndex__c, Customer_Size__c, Customer_Employee_Size__c, Campaign__c From Lead_Assignment_Rules__c WHERE IsSecondary__c=true ORDER BY Id DESC];
+        }
+    }
+    /********************************************************************************************************************************/
+    
+    /**************************************Returns Map of Skills corresponding to its User List**************************************/
+    public static Map<Id, List<User_Skill__c>> getSkillsToUserSkillsMap(Set<Id> skillIds) {
+        Map<Id, List<User_Skill__c>> skillsToUserSkills = new Map<Id, List<User_Skill__c>>();
+        for(User_Skill__c userSkill : [SELECT Id, User__c,Name, Skill__c,User__r.Name, Skill__r.Name, IsLeadAssigned__c, User__r.Department, User__r.Email, User__r.Phone  From User_Skill__c WHERE Skill__c IN : skillIds
+                                                AND User__r.IsActive = true ORDER BY Id DESC]) {
+               List<User_Skill__c> userSkillList = new  List<User_Skill__c>();
+               if(skillsToUserSkills.get(userSkill.Skill__c) != null) {
+                    userSkillList = skillsToUserSkills.get(userSkill.Skill__c);
+               }
+               userSkillList.add(userSkill);
+               skillsToUserSkills.put((Id)userSkill.Skill__c, userSkillList); 
+        }
+        return skillsToUserSkills;                                     
+    }
+    /************************************************************************************************************************************/
+    
+    /**************************************Return Account Maps if Lead is SOLVE THEN SELL************************************************/
+    public static Map<String, Account> findAccountMap(List<Lead> leadList) {
+        Map<String, Account> userToAccountMap = new Map<String, Account>();
+        List<String> userIds = new List<String>();
+        for(Lead leadObj : leadList) {
+            if(leadObj.User_ID__c != null 
+            && leadObj.LeadSource == 'Solve then Sell' 
+            || leadObj.BMID__c == 'SOLVETHENSELL') {
+                userIds.add(leadObj.User_ID__c);
+            }
+        }
+        for(Account accObj : [SELECT Id, RC_User_ID__c FROM Account WHERE RC_User_ID__c IN :userIds AND RC_User_ID__c != '']) {     
+            userToAccountMap.put(accObj.RC_User_ID__c, accObj);
+        }
+        return userToAccountMap;
+    }
+    /************************************************************************************************************************************/
+    
+    /************************************Return Number OF Employee Picklist Values of Lead**********************************************/
+    public static Set<string> getPicklistValue(){       
+        Set<String> ranges = new Set<String>();
+        Schema.DescribeFieldResult numberOfEmployees = Lead.NumberOfEmployees__c.getDescribe();
+        List<Schema.PicklistEntry> numberOfEmployeesRange = numberOfEmployees.getPicklistValues();
+        for(Schema.PicklistEntry schObj : numberOfEmployeesRange){
+            ranges.add(schObj.getValue());
+        }     
+        return ranges;         
+    }
+    /**********************************************************************************************************************************/
+    
+    /***************************************Returns Employee Size Map*****************************************************************/
+    public static Map<String, String> getCustomerSize(List<Lead> leadList) {
+        Map<String, String> empToCustomerSizeMap = new Map<String, String>();
+        
+        Set<String> ranges = new Set<String>();
+        Schema.DescribeFieldResult numberOfEmployees = Lead.NumberOfEmployees__c.getDescribe();
+        List<Schema.PicklistEntry> numberOfEmployeesRange = numberOfEmployees.getPicklistValues();
+        for(Schema.PicklistEntry schObj : numberOfEmployeesRange) {
+            ranges.add(schObj.getValue());
+        }
+        for(Lead leadObj : leadList) {
+            String customerSize = '2-9';
+            /*if(!String.isBlank(leadObj.NumberOfEmployees__c) && ranges.contains(leadObj.NumberOfEmployees__c)) {
+                customerSize = leadObj.NumberOfEmployees__c;
+            }*/
+            if(!String.isBlank(leadObj.Effective_No_of_Employees_Range__c) && ranges.contains(leadObj.Effective_No_of_Employees_Range__c)) {
+                customerSize = leadObj.Effective_No_of_Employees_Range__c;
+            }
+            
+            //empToCustomerSizeMap.put((String.isBlank(leadObj.NumberOfEmployees__c) ? 'DEFAULT' : leadObj.NumberOfEmployees__c), customerSize);
+            empToCustomerSizeMap.put((String.isBlank(leadObj.Effective_No_of_Employees_Range__c) ? 'DEFAULT' : leadObj.Effective_No_of_Employees_Range__c), customerSize);
+        }
+        return empToCustomerSizeMap;
+    }
+    /*************************************************************************************************************************************/
+    
+    /*******************************************ASSIGN LEAD SOURCE BASED ON CONDITIONS****************************************************/
+    public static void assignLeadSource(Lead leadObj) {
+      set<String> validLeadSourceSet = new Set<String>{'Initial','About To Be Cancelled','Vista Print'};
+      set<String> validBrandNameSet = new Set<String>{BT_BUSINESS,'BT','RingCentral UK'};
+      set<string> validPromotionSet = new Set<String>{'British Telecom','BT RingCentral','RC Partner Program Vista Print UK Studio',
+                              'Vista Print UK Telemarkeing','Vista Print UK','Vista UK','Voicemail - UK','Call Management - UK',
+                              '2009 UKRC Campaign','Fax - UK '};
+        set<string> validTimeZoneSet = new Set<String> {'British Summer Time','Greenwich Mean Time','GMT','CET'};
+        if(validLeadSourceSet.contains(leadObj.LeadSource)){                
+            if((leadObj.Email != null && leadObj.Email.endsWith('.co.uk')) 
+                || leadObj.Country == 'UK' 
+                || (leadObj.phone == null 
+                || leadObj.phone.contains('+'))
+                || validBrandNameSet.contains(leadObj.Lead_Brand_Name__c)
+            || validPromotionSet.contains(leadObj.Promotion__c)
+            || validTimeZoneSet.contains(leadObj.Timezone__c)){
+                if(leadObj.LeadSource == 'Initial') {
+                    leadObj.LeadSource = 'Initial UK';
+                } else if(leadObj.LeadSource == 'About To Be Cancelled') {
+                    leadObj.LeadSource = 'About To Be Cancelled UK';
+                } else if(leadObj.LeadSource == 'Vista Print') {
+                    leadObj.LeadSource = 'Vista Print UK';
+                }
+            }
+        }
+    }
+    /*************************************************************************************************************************************/
+    
+    /*****************************************Return USER SKILL List Based on LEAD ENTRY SOURCE from LARs*********************************/
+    public static List<User_Skill__c> getUserSkillsPerLeadEntrySource(Lead leadObj,  
+                                    List<Lead_Assignment_Rules__c> larList, Map<Id, List<User_Skill__c>> skillsToUserSkills, 
+                                    List<Id> finalSkillList, String customerSize, Map<Id, Skill__c> skillsMap,
+                                    Map<Id, Skill__c> finalSkillMap ) {
+        List<User_Skill__c> allUserSkills = new List<User_Skill__c>();
+        List<Lead_Assignment_Rules__c> larFinalList = new List<Lead_Assignment_Rules__c>();
+        for(Lead_Assignment_Rules__c larObj : larList){
+            if((!String.isEmpty(larObj.Lead_Entry_Source__c) && !String.isEmpty(leadObj.Lead_Entry_Source__c) 
+            && (larObj.Lead_Entry_Source__c.trim() == leadObj.Lead_Entry_Source__c.trim())) 
+                && (larObj.Customer_Employee_Size__c == null
+                    || larObj.Customer_Employee_Size__c.containsIgnoreCase(customerSize))){             
+                try{
+                    if(larObj.Skill__c != null
+                        && skillsToUserSkills.get(larObj.Skill__c) != null 
+                        && skillsToUserSkills.get(larObj.Skill__c).size() != 0) {
+                            if(finalSkillMap.get(larObj.Skill__c) == null) {
+                                larFinalList.add(larObj); 
+                                finalSkillList.add(larObj.Skill__c); 
+                                finalSkillMap.put(larObj.Skill__c, skillsMap.get(larObj.Skill__c));
+                                leadObj.LAR_Source__c = 'LAR PER LES';
+                                break;
+                            }  
+                    }
+                } catch(System.Exception e){
+                    leadObj.OwnerId = '005800000036sJJ';
+                    leadObj.description = 'This lead could not find any users with the correct skill so assigned to rcsf.';
+                }
+                leadObj.Lead_Score__c = larObj.Lead_Score__c;                                     
+            }
+        }
+        for(Lead_Assignment_Rules__c larObj: larFinalList) {
+            if(larObj != null && larObj.Skill__c != null) {
+                List<User_Skill__c> userSkills = skillsToUserSkills.get((Id)larObj.Skill__c);
+                if(userSkills != null && userSkills.size() != 0) {
+                    allUserSkills.addAll(userSkills);
+                } 
+            }
+        }
+        return allUserSkills;                                   
+    }
+    /*************************************************************************************************************************************/
+    
+    /*****************************************Return USER SKILL List Based on CAMPAIGN from LARs*********************************/
+    public static List<User_Skill__c> getUserSkillsPerCampaign(Lead leadObj, Campaign campaignObj, 
+                                        List<Lead_Assignment_Rules__c> larList, Map<Id, List<User_Skill__c>> skillsToUserSkills, 
+                                        List<Id> finalSkillList, String customerSize, Map<Id, Skill__c> skillsMap,
+                                        Map<Id, Skill__c> finalSkillMap ) {
+        List<User_Skill__c> allUserSkills = new List<User_Skill__c>();
+        if(campaignObj != null && campaignObj.Name != 'Default Campaign') {
+            List<Lead_Assignment_Rules__c> larFinalList = new List<Lead_Assignment_Rules__c>(); 
+            for(Lead_Assignment_Rules__c larObj : larList) {
+                if(larObj.Campaign__c != null){
+                    if(larObj.Campaign__c == campaignObj.Id 
+                        && ( larObj.Customer_Employee_Size__c == null
+                        || larObj.Customer_Employee_Size__c.containsIgnoreCase(customerSize))){                     
+                        try {     
+                            if(larObj.Skill__c != null 
+                                    && skillsToUserSkills.get(larObj.Skill__c) != null 
+                                    && skillsToUserSkills.get(larObj.Skill__c).size() != 0) {
+                                if(finalSkillMap.get(larObj.Skill__c) == null) {
+                                    larFinalList.add(larObj);
+                                    finalSkillList.add(larObj.Skill__c); 
+                                    finalSkillMap.put(larObj.Skill__c, skillsMap.get(larObj.Skill__c));
+                                    leadObj.LAR_Source__c = 'LAR PER CAMPAIGN';
+                                    break;
+                                } 
+                            }
+                        } catch(System.Exception e){
+                            leadObj.OwnerId = '005800000036sJJ';
+                        }                               
+                    }
+                }
+            }
+            for(Lead_Assignment_Rules__c larObj: larFinalList) {
+                if(larObj != null && larObj.Skill__c != null) {
+                    List<User_Skill__c> userSkills = skillsToUserSkills.get((Id)larObj.Skill__c);
+                    if(userSkills != null && userSkills.size() != 0) {
+                        allUserSkills.addAll(userSkills);
+                    } 
+                }
+            }
+        }
+        return allUserSkills;
+    }
+    /*************************************************************************************************************************************/
+    
+    /****************************************************Returns Skill Map****************************************************************/
+    public static Map<Id, Skill__c> getSkillsMap(List<Id> skillIds) {
+        return (skillIds == null || skillIds.size() == 0 ? new Map<Id, Skill__c>() : new Map<Id, Skill__c>([SELECT Id, Name, CurrentUserIndex__c, GlobalUserSkillIndex__c, (SELECT Id, Name FROM Lead_Assignment_Rules__r ORDER BY Id DESC) FROM Skill__c WHERE Id IN: skillIds]));
+    }
+    /*************************************************************************************************************************************/
+    
+    /*****************************************Return USER SKILL List Based on LEAD SOURCE from LARs*********************************/
+    public static List<User_Skill__c> getUserSkillsPerLeadSource(Lead leadObj,  
+                                        List<Lead_Assignment_Rules__c> larList, Map<Id, List<User_Skill__c>> skillsToUserSkills, 
+                                        List<Id> finalSkillList, String customerSize, Map<Id, Skill__c> skillsMap,
+                                        Map<Id, Skill__c> finalSkillMap ) {
+        List<User_Skill__c> allUserSkills = new List<User_Skill__c>();
+        List<Lead_Assignment_Rules__c> larFinalList = new List<Lead_Assignment_Rules__c>();
+        for(Lead_Assignment_Rules__c larObj : larList){
+            if(larObj.Lead_Source__c != null && larObj.Lead_Source__c != ''){
+                if(leadObj.LeadSource != null && (larObj.Lead_Source__c.trim() == leadObj.LeadSource.trim()) 
+                    && (larObj.Customer_Employee_Size__c == null
+                        || larObj.Customer_Employee_Size__c.containsIgnoreCase(customerSize)) ){                    
+                    try{
+                        if(larObj.Skill__c != null
+                            && skillsToUserSkills.get(larObj.Skill__c) != null 
+                            && skillsToUserSkills.get(larObj.Skill__c).size() != 0) {
+                                if(finalSkillMap.get(larObj.Skill__c) == null) {
+                                    larFinalList.add(larObj); 
+                                    finalSkillList.add(larObj.Skill__c); 
+                                    finalSkillMap.put(larObj.Skill__c, skillsMap.get(larObj.Skill__c));
+                                    leadObj.LAR_Source__c = 'LAR PER LEADSOURCE';
+                                    break;
+                                }  
+                        }
+                    } catch(System.Exception e){
+                        leadObj.OwnerId = '005800000036sJJ';
+                        leadObj.description = 'This lead could not find any users with the correct skill so assigned to rcsf.';
+                    }
+                    leadObj.Lead_Score__c = larObj.Lead_Score__c;                                     
+                }
+            }                               
+        }
+        for(Lead_Assignment_Rules__c larObj: larFinalList) {
+            if(larObj != null && larObj.Skill__c != null) {
+                List<User_Skill__c> userSkills = skillsToUserSkills.get((Id)larObj.Skill__c);
+                if(userSkills != null && userSkills.size() != 0) {
+                    allUserSkills.addAll(userSkills);
+                } 
+            }
+        }
+        return allUserSkills;                       
+    }        
+    /*************************************************************************************************************************************/
+    
+    /*******************************Assign Lead owner and update Skill Counter Based on Skill found by LARs*******************************/ 
+    public static Map<Id, Skill__c> assignLeadPerLAR(Lead leadObj, List<Id> finalSkillList, Map<Id, Skill__c> skillsMap,
+                            List<User_Skill__c> allUserSkills,Map<Id, List<User_Skill__c>> skillsToUserSkills ) {
+        if(finalSkillList.size() != 0) {
+            Id currentSkillId = finalSkillList.get(0);
+            Skill__c skillObj = skillsMap.get(currentSkillId);
+            Integer leadCount = Integer.valueOf(''+(skillObj.CurrentUserIndex__c == null ? 0 : skillObj.CurrentUserIndex__c));
+            if(finalSkillList.size() != 1) {
+                    Integer larGlobalIndex = Integer.valueOf(''+(skillObj.GlobalUserSkillIndex__c == null ? 0 : skillObj.GlobalUserSkillIndex__c));
+                    if(larGlobalIndex == null || larGlobalIndex >= allUserSkills.size() ) {
+                        larGlobalIndex = 0;
+                    }
+                    leadObj.Assignment_Source_hidden__c = 'LARs';
+                    leadObj.OwnerId = allUserSkills.get(larGlobalIndex).User__c;
+                    leadObj.Skill_Name__c = skillObj.Name;
+                    Integer previousSize = 0;
+                    for(Id skillId : finalSkillList) {
+                        if(skillId != null) {
+                            Integer currentSize = (skillsToUserSkills.get(skillId) == null ? 0 :  skillsToUserSkills.get(skillId).size());
+                            Integer countSum = currentSize+previousSize;
+                            if(countSum > larGlobalIndex) {
+                                Integer offset = 0;
+                                if(previousSize == 0) {
+                                    offset = 0;
+                                } else {
+                                    offset = countSum - currentSize;
+                                }
+                                currentSkillId = skillId;
+                                leadCount = larGlobalIndex - offset;
+                                Skill__c skillObjNew = skillsMap.get(skillId);
+                                ++leadCount;
+                                skillObjNew.CurrentUserIndex__c = leadCount;
+                                skillsMap.put(skillId, skillObjNew);
+                                break;
+                            }
+                            previousSize += currentSize;
+                        }
+                    }
+                    
+                    ++larGlobalIndex;
+                    for(Id skillId : finalSkillList) {
+                        if(skillId != null) {
+                            Skill__c skillObjNew = skillsMap.get(skillId);
+                            skillObjNew.GlobalUserSkillIndex__c = larGlobalIndex;
+                            skillsMap.put(skillId, skillObjNew);
+                        }
+                    }
+            } else {
+                Id skillId = currentSkillId;
+                Integer currentSize = (skillsToUserSkills.get(skillId) == null ? 0 :  skillsToUserSkills.get(skillId).size());
+                if(leadCount == null || leadCount >= currentSize) {
+                    leadCount = 0;
+                }
+                
+                leadObj.Assignment_Source_hidden__c = 'LARs';
+                leadObj.OwnerId = skillsToUserSkills.get(skillId).get(leadCount).User__c;
+                leadObj.Skill_Name__c = skillObj.Name;
+                Skill__c skillObjNew = skillsMap.get(skillId);
+                ++leadCount;
+                skillObjNew.CurrentUserIndex__c = leadCount;
+                skillsMap.put(skillId, skillObjNew);                 
+            }
+        }
+        return skillsMap;
+    }
+    /*************************************************************************************************************************************/
+    
+    /********************************************Format Phone Number as per New Format Logic**********************************************/
+    public static void arrangePhoneNumber(Lead leadObj) {
+        if(leadObj.Phone!=null){                        
+            if(leadObj.Country!=null){   
+                if(('Great Britain'.equalsIgnoreCase(leadObj.Country) || 'United Kingdom'.equalsIgnoreCase(leadObj.Country) || 
+                    'GB'.equalsIgnoreCase(leadObj.Country) || 'UK'.equalsIgnoreCase(leadObj.Country))){
+                    leadObj.Phone = ValidationUtility.validatePhoneNumber(leadObj.Phone.trim(), 'UK');
+                }else{
+                    leadObj.Phone = ValidationUtility.validatePhoneNumber(leadObj.Phone.trim(), '');
+                }
+            }else{
+                if(leadObj.Phone.trim().startsWith('+44') || leadObj.Phone.trim().startsWith('44') || leadObj.Phone.trim().startsWith('0')){
+                    leadObj.Phone = ValidationUtility.validatePhoneNumber(leadObj.Phone.trim(), 'UK');
+                }else {
+                    leadObj.Phone = ValidationUtility.validatePhoneNumber(leadObj.Phone.trim(), '');
+                }
+            }
+        }
+        // Set indexed fields so they can be used in duplicate searching
+        leadObj.indexedPhone__c = leadObj.Phone;
+        leadObj.indexedEmail__c = leadObj.email;
+    }   
+    /*************************************************************************************************************************************/
+    
+    /*********************************************Update Lead Owner Manager Fields********************************************************/
+    public static void getLeadOwnerManager(List<Lead> leadList) {
+        Set<Id> ownerIds = new Set<Id>();
+        for(Lead leadObj : leadList) {
+            if(leadObj.OwnerId != '005800000037xj5'){
+                ownerIds.add(leadObj.OwnerId);
+            }
+        }
+        Set<String> managerIds = new Set<String>();
+        Map<Id, User> managerMap = new Map<Id, User>();
+        Map<id,User> userToManagerMap = new Map<id,User>();
+        if(ownerIds.size() != 0) {
+            userToManagerMap = new Map<id, User>([SELECT Phone, Manager.Email, Manager.Name, ManagerId, Mkto_Reply_Email__c  
+                                                    From User WHERE id IN: ownerIds]);
+        }
+         
+        for(Lead leadObj : leadList) {
+            if(leadObj.OwnerId == '005800000037xj5'){
+                leadObj.Owner_Manager_Email__c = 'daved@ringcentral.com';
+                leadObj.Owner_Manager_Name__c = 'Dave Demink'; 
+            } else {                                   
+                try{
+                    User userObj = userToManagerMap.get(leadObj.OwnerId);
+                    if(userObj != null){
+                      leadObj.Owner_Manager_Email__c = userObj.Manager.email;
+                      leadObj.Owner_Manager_Name__c = userObj.Manager.name;
+                      leadObj.Lead_Owner_Phone_Number__c = userObj.Phone;
+                      leadObj.Mkto_Reply_Email__c = userObj.Mkto_Reply_Email__c;
+                    }
+                }
+                catch(System.Exception e){
+                    // system.debug('linenum: 422');
+                }               
+            } 
+        }
+    }
+    /******************************************************************************************************************************************/
+    
+    /******************************** UPDATE ULIMATE PARTNER ACCOUNT INTO LEAD ON INSERT-UPDATE ***********************************************/
+    public static void getLeadUltimatePartnerId(List<Lead> leadList, Map<Id, Lead> oldMap, Map<ID,Schema.RecordTypeInfo> rtMapByName) {
+        Map<String, Account> mapPartnerIdToAccount = new Map<String, Account>(); // Partner Id to Account Object Map
+        Map<String,id> mapPartnerIdToUltAccId = new Map<String, Id>(); // Ultimate Partner Id to Account Object Map
+        Set<Id> ultimateParentAccIdSet = new Set<Id>(); // Ultimate Partner Id Set
+        Map<Id, Account> mapAccountUltParentAccdet = new Map<Id, Account>(); // Partner Id to Ultimate Partner Id Map
+        
+        Set<String> partnerIds = new Set<String>();
+        for(Lead leadObj : leadList) {
+          if(leadObj.recordTypeId != null && rtMapByName.get(leadObj.RecordTypeId).getName() == 'Partner Leads'){
+              Lead oldLeadObj = (oldMap == null ? null : oldMap.get(leadObj.Id));
+              if(String.isBlank(leadObj.Ultimate_Parent_Account_ID__c) || (oldLeadObj != null && leadObj.LeadPartnerID__c != oldLeadObj.LeadPartnerID__c)) {
+                  if(!String.isBlank(leadObj.LeadPartnerID__c)) {
+                      partnerIds.add(leadObj.LeadPartnerID__c);
+                  } else {
+                      leadObj.Ultimate_Parent_Account_ID__c = null;
+                      leadObj.Ultimate_Parent_Account_Name__c = null;
+                      leadObj.Ultimate_Parent_Account_Partner_ID__c = null;
+                      leadObj.Partner_Account_Name__c = null;
+                      leadObj.Current_Owner_Name__c = null;
+                  }
+              }
+          }
+        }        
+
+        if(partnerIds.size() != 0) {
+            List<Account> accountList = [SELECT Id, Name,Current_Owner_Name__c, Ultimate_Parent_Account_ID__c, Partner_Id__c, Var_territory__c FROM Account 
+                                        WHERE Partner_Id__c IN: partnerIds AND RecordType.Name = 'Partner Account' ORDER BY LastModifiedDate ASC]; // Most recent will replace the old account thats why chose ASC
+            for(Account accObj: accountList) {
+                mapPartnerIdToAccount.put(accObj.Partner_Id__c,accObj);
+                ultimateParentAccIdSet.add(accObj.Ultimate_Parent_Account_ID__c);
+                mapPartnerIdToUltAccId.put(accObj.Partner_Id__c,accObj.Ultimate_Parent_Account_ID__c);
+            }
+            mapAccountUltParentAccdet = new Map<Id,Account>([SELECT Id,Name,Current_Owner_Name__c,Partner_Id__c
+                                                                    FROM Account WHERE 
+                                                                Id IN :ultimateParentAccIdSet]); 
+            for(Lead leadObj : leadList) {
+                Lead oldLeadObj = (oldMap == null ? null : oldMap.get(leadObj.Id));
+                if(String.isBlank(leadObj.Ultimate_Parent_Account_ID__c) || (oldLeadObj != null && leadObj.LeadPartnerID__c != oldLeadObj.LeadPartnerID__c)) {
+                    if(!String.isBlank(leadObj.LeadPartnerID__c)) {
+                        if(mapPartnerIdToAccount != null && mapPartnerIdToAccount.get(leadObj.LeadPartnerID__c) != null) {
+                            leadObj.Partner_Account_Name__c = mapPartnerIdToAccount.get(leadObj.LeadPartnerID__c).Name;
+                            leadObj.Current_Owner_Name__c = mapPartnerIdToAccount.get(leadObj.LeadPartnerID__c).Current_Owner_Name__c;      
+                            //Case #03765152                       
+                            leadObj.Var_territory__c = mapPartnerIdToAccount.get(leadObj.LeadPartnerID__c).Var_territory__c;
+                            //Case #03765152 
+                            
+                            if(mapAccountUltParentAccdet != null && mapPartnerIdToAccount.get(leadObj.LeadPartnerID__c).Ultimate_Parent_Account_ID__c != null &&
+                                mapAccountUltParentAccdet.get(mapPartnerIdToAccount.get(leadObj.LeadPartnerID__c).Ultimate_Parent_Account_ID__c) != null) {
+                                leadObj.Ultimate_Parent_Account_ID__c = mapAccountUltParentAccdet.get(mapPartnerIdToAccount.get(leadObj.LeadPartnerID__c).Ultimate_Parent_Account_ID__c).Id;
+                                leadObj.Ultimate_Parent_Account_Name__c = mapAccountUltParentAccdet.get(mapPartnerIdToAccount.get(leadObj.LeadPartnerID__c).Ultimate_Parent_Account_ID__c).Name;
+                                leadObj.Ultimate_Parent_Account_Partner_ID__c = mapAccountUltParentAccdet.get(mapPartnerIdToAccount.get(leadObj.LeadPartnerID__c).Ultimate_Parent_Account_ID__c).Partner_id__c;
+                            }
+                        }  
+                    } 
+                }
+            }
+        }
+    }
+    /**********************************************************************************************************************/
+    
+    /***************************Returns map of Approved Brand List based on Account PartnerId******************************/
+    public static map<string,List<string>> getApprovedBrandList(List<Lead> newLeadList) {
+        map<string,List<string>> approvedBrandListMap = new map<string,List<string>>();
+        try {
+            if(UserInfo.getUserType() == 'PowerPartner') {
+                User userObjDetails = [select Contact.Account.Permitted_Brands__c,Contact.Account.Partner_ID__c 
+                                            from User where id = :UserInfo.getUserId()];
+                if(userObjDetails != null && userObjDetails.Contact.Account.Permitted_Brands__c != null &&
+                    userObjDetails.Contact.Account.Partner_ID__c != null) {
+                    approvedBrandListMap.put(userObjDetails.Contact.Account.Partner_ID__c,
+                                                userObjDetails.Contact.Account.Permitted_Brands__c.split(';'));
+                }   
+            } else {
+                set<string> partnerIdSet = new set<string>();
+                for(Lead leadObj: newLeadList) {
+                    if(!string.isBlank(leadObj.LeadPartnerID__c)) {
+                        partnerIdSet.add(leadObj.LeadPartnerID__c);
+                    }
+                }
+                for(Account accObj : [select Permitted_Brands__c,Partner_ID__c from Account where RecordType.Name = 'Partner Account' 
+                                        and Partner_ID__c IN :partnerIdSet]) {
+                    if(accObj.Permitted_Brands__c != null) {
+                        approvedBrandListMap.put(accObj.Partner_ID__c,accObj.Permitted_Brands__c.split(';'));       
+                    }                       
+                }
+            }
+        } catch(Exception ex) {}
+        return approvedBrandListMap;  
+    }
+    /**********************************************************************************************************************/
+    
+    /******************************************Check Partner Lead Permitted By Brand***************************************/
+    public static void checkPartnerLeadPermittedByBrand(List<Lead> newLeadList, map<Id,Lead> leadoldMap, map<string,List<string>> approvedBrandListMap,
+                              Map<ID,Schema.RecordTypeInfo> rtMapByName) {
+        boolean isBrandPermitted = false;
+        try {
+            if(newLeadList != null ) { //&& newLeadList.size() == 1
+                for(Lead newLead : newLeadList) {
+                    isBrandPermitted = false;
+                    if(newLead.RecordTypeId != null && rtMapByName != null && rtMapByName.get(newLead.RecordTypeId).getName() == 'Partner Leads' &&
+                        approvedBrandListMap != null && newLead.LeadPartnerID__c != null && 
+                        approvedBrandListMap.get(newLead.LeadPartnerID__c) != null && newLead.Lead_Brand_Name__c != null && 
+                        (leadoldMap == null || leadoldMap.get(newLead.id).Lead_Brand_Name__c != newLead.Lead_Brand_Name__c)) {
+                        for(string strBrand : approvedBrandListMap.get(newLead.LeadPartnerID__c)) {
+                            if(strBrand.trim() == newLead.Lead_Brand_Name__c) {  
+                                isBrandPermitted = true;
+                                break;
+                            }
+                        }
+                        if(isBrandPermitted == false) {
+                            newLead.AddError('You are not permitted to sell this Brand. '+
+                                                'Please contact <a style="font-size:12px;" '+
+                                                'href=mailto:resellers@ringcentral.com>resellers@ringcentral.com</a> to gain access to this Brand.');
+                        }
+                    }   
+                }
+            }
+        } catch(Exception ex) {}
+    }
+    /**********************************************************************************************************************/
+    
+    /************************************UPDATE Partner_Account_Current_Owner_Email__c Field of Lead**********************/
+    public static void updatePartnerLeadCurrentOwnerEmail(List<Lead> newleadList, map<Id,Lead> newLeadMap, map<Id,Lead> oldLeadMap,
+                                Map<ID,Schema.RecordTypeInfo> rtMapByName) {
+        try {
+            set<Id> partnerOwnerIdSet = new set<Id>(); 
+            for(Lead leadObj : newleadList) {
+                if(leadObj.recordTypeId != null && rtMapByName.get(leadObj.recordTypeId).getName() == 'Partner Leads' 
+                            && leadObj.Partner_Lead_Owner__c != null && (oldLeadMap == null || 
+                            oldLeadMap.get(leadObj.id).Partner_Lead_Owner__c != newLeadMap.get(leadObj.id).Partner_Lead_Owner__c)) {
+                    partnerOwnerIdSet.add(leadObj.Partner_Lead_Owner__c);
+                }
+            }
+            map<Id,User> userIdToAccountMap = new  map<Id,User>();
+            if(partnerOwnerIdSet.size()>0) {
+                userIdToAccountMap = new  map<Id,User>([select contact.Account.Current_Owner__c, contact.Account.Current_Owner_Email__c 
+                                                                    from User where Id IN :partnerOwnerIdSet]);
+                for(Lead leadObj : newleadList) {
+                    if(userIdToAccountMap != null && rtMapByName.get(leadObj.recordTypeId).getName() == 'Partner Leads' 
+                                && leadObj.Partner_Lead_Owner__c != null && userIdToAccountMap.get(leadObj.Partner_Lead_Owner__c) != null) {
+                        leadObj.Partner_Account_Current_Owner_Email__c = userIdToAccountMap.get(leadObj.Partner_Lead_Owner__c).contact.Account.Current_Owner_Email__c; 
+                    } else {
+                        leadObj.Partner_Account_Current_Owner_Email__c = null;
+                    }
+                }   
+            }
+        } catch(Exception ex) {}
+    } 
+    /**********************************************************************************************************************/
+    
+  /*******************************************Update Most Recent Campaign on Lead****************************************/
+    public static set<String> updateMostRecentCampaign(List<Lead> newLeadList,map<id,lead> oldLeadMap,Map<ID,Schema.RecordTypeInfo> rtMapByName){
+        Set<string> UniqueCombinationSet = new Set<string>();
+        List<Lead> updatedLeadList = new List<Lead>();
+        Set<String> campaignIdSet = new Set<String>();
+        List<CampaignWrapper> camWrapperList = new List<CampaignWrapper>();
+        try{
+            for(Lead leadObj : newLeadList){                
+                if((leadObj.BMID__c!=null && leadObj.BMID__c != oldLeadMap.get(leadObj.Id).BMID__c) ||
+                    (leadObj.AID__c!=null && leadObj.AID__c != oldLeadMap.get(leadObj.Id).AID__c) ||
+                    (leadObj.PID__c!=null && leadObj.PID__c != oldLeadMap.get(leadObj.Id).PID__c) ||
+                    (leadObj.Five9_DNIS__c!=null && leadObj.Five9_DNIS__c != oldLeadMap.get(leadObj.Id).Five9_DNIS__c)) {                   
+                    map<String,boolean> fieldUpdateMap = new map<String,boolean>{'BMID'=>false,'AID'=>false,'PID'=>false,'DNIS'=>false};
+                    if(leadObj.BMID__c != oldLeadMap.get(leadObj.Id).BMID__c){  
+                        fieldUpdateMap.put('BMID',true);    
+                    }
+                    if(leadObj.AID__c != oldLeadMap.get(leadObj.Id).AID__c){
+                        fieldUpdateMap.put('AID',true);
+                    }
+                    if(leadObj.PID__c != oldLeadMap.get(leadObj.Id).PID__c){
+                        fieldUpdateMap.put('PID',true);
+                    }
+                    if(leadObj.Five9_DNIS__c != oldLeadMap.get(leadObj.Id).Five9_DNIS__c){
+                        fieldUpdateMap.put('DNIS',true);
+                    }
+                    if(fieldUpdateMap!=null && fieldUpdateMap.get('BMID')!=null && fieldUpdateMap.get('BMID')==false){
+                        leadObj.BMID__c = '';
+                    }
+                    if(fieldUpdateMap!=null && fieldUpdateMap.get('AID')!=null && fieldUpdateMap.get('AID')==false){
+                        leadObj.AID__c = '';
+                    }
+                    if(fieldUpdateMap!=null && fieldUpdateMap.get('PID')!=null && fieldUpdateMap.get('PID')==false){
+                        leadObj.PID__c = '';
+                    }
+                    if(fieldUpdateMap!=null && fieldUpdateMap.get('DNIS')!=null && fieldUpdateMap.get('DNIS')==false){
+                        leadObj.Five9_DNIS__c = '';
+                    }                   
+                    updatedLeadList.add(leadObj);
+                    campaignIdSet.add(leadObj.Most_Recent_Campaign__c); 
+                    boolean isPartnerLead = false;
+                    if((leadObj.RecordTypeId!=null && rtMapByName.get(leadObj.RecordTypeId).getName() == 'Partner Leads')){
+                      isPartnerLead = true;
+                    }
+                    camWrapperList.add(new CampaignWrapper(leadObj.AID__c, leadObj.BMID__c, leadObj.PID__c, leadObj.Five9_DNIS__c,
+                                        null,isPartnerLead));
+                                                           
+                } else if((leadObj.BMID__c != oldLeadMap.get(leadObj.Id).BMID__c) ||
+                    (leadObj.AID__c != oldLeadMap.get(leadObj.Id).AID__c) ||
+                    (leadObj.PID__c != oldLeadMap.get(leadObj.Id).PID__c) ||
+                    (leadObj.Five9_DNIS__c != oldLeadMap.get(leadObj.Id).Five9_DNIS__c)){
+                        updatedLeadList.add(leadObj);
+                        boolean isPartnerLead = false;
+                      if((leadObj.RecordTypeId!=null && rtMapByName.get(leadObj.RecordTypeId).getName() == 'Partner Leads')){
+                        isPartnerLead = true;
+                      }
+                        campaignIdSet.add(leadObj.Most_Recent_Campaign__c); 
+                        camWrapperList.add(new CampaignWrapper(leadObj.AID__c, leadObj.BMID__c, leadObj.PID__c, leadObj.Five9_DNIS__c,
+                                        null,isPartnerLead));   
+                } else {
+                  campaignIdSet.add(leadObj.Most_Recent_Campaign__c);
+                }
+            }
+            
+            if(updatedLeadList!=null && updatedLeadList.size() > 0){
+                List<Lead> brokenLeadList = new List<Lead>();
+                List<Lead> trueWalkOnLeadList = new List<Lead>();
+                Map<String, Campaign> criteriaToCamapaignMap = CampaignAssignmentHelper.findCampaingsLogic(camWrapperList);
+                for(Lead leadObj : updatedLeadList){
+                    if(String.isBlank(leadObj.AID__c) && String.isBlank(leadObj.PID__c) && String.isBlank(leadObj.BMID__c) && String.isBlank(leadObj.Five9_DNIS__c) ){
+                        trueWalkOnLeadList.add(leadObj);
+                    }else{
+                        Campaign campaignObj = CampaignAssignmentHelper.getLeadCampaignLogic(new CampaignWrapper(leadObj.AID__c, leadObj.BMID__c, leadObj.PID__c, leadObj.Five9_DNIS__c,null, (leadObj.RecordTypeId == OpportunityHelper.getOppRecordTypeMap('Partner Leads'))), criteriaToCamapaignMap);
+                        if(campaignObj != null && campaignObj.Name!='Default Campaign') {
+                            leadObj.Primary_Campaign__c = campaignObj.Id;
+                            leadObj.Most_Recent_Campaign__c = campaignObj.Id;   
+                            campaignIdSet.add(leadObj.Most_Recent_Campaign__c);            
+                        }else{
+                            brokenLeadList.add(leadObj);                        
+                        }
+                    }
+                }
+                
+                Map<String, Campaign> campaignMap = new Map<String, Campaign>();
+                
+                if(trueWalkOnLeadList!=null && trueWalkOnLeadList.size() > 0){                  
+                    LeadTriggerHelperExt.assignCampaignToList('True Walk-On',trueWalkOnLeadList,campaignMap);                    
+                    for(String campaignId : campaignMap.keySet()){
+                      campaignIdSet.add(campaignId);
+                    }
+                }
+                
+                if(brokenLeadList!=null && brokenLeadList.size() > 0){
+                  campaignMap = new Map<String, Campaign>();
+                    LeadTriggerHelperExt.assignCampaignToList('Broken Attribution',brokenLeadList,campaignMap);                    
+                    for(String campaignId : campaignMap.keySet()){
+                      campaignIdSet.add(campaignId);
+                    }
+                }
+            }
+        }catch(exception e){
+            System.debug('==Exception=='+e.getMessage()+'==Line=='+e.getLineNumber());
+        }
+        
+        return campaignIdSet;
+    }
+    /**************************************************End of Update Most Recent Campaign on Lead**************************************/ 
+    
+    /*****************************Helper Method Called from "updateMostRecentCampaign" Method*****************************************/
+    public static string createUniqueCombination(String BMID, String AID, String PID, String DNIS){
+        String strUniqueCombination = '';
+        if(BMID!=null && BMID!=''){
+            strUniqueCombination+=BMID;
+        }else{
+            strUniqueCombination+='NULL';
+        }
+        if(AID!=null && AID!=''){
+            strUniqueCombination+='-'+AID;
+        }else{
+            strUniqueCombination+='-NULL';
+        }
+        if(PID!=null && PID!=''){
+            strUniqueCombination+='-'+PID;
+        }else{
+            strUniqueCombination+='-NULL';
+        }
+        if(DNIS!=null && DNIS!=''){
+            strUniqueCombination+='-'+DNIS;
+        }else{
+            strUniqueCombination+='-NULL';
+        }       
+        return strUniqueCombination;
+    }
+    /***********************************************************************************************************************************/
+    
+    /***********************************Assign Brand UK if Owner Role contains UK ******************************************************/
+    public static void assignBrand(List<Lead> leadList){
+    Set<Id> setOwnerId = new Set<Id>();
+        for(Lead leadObj : leadList) {
+            setOwnerId.add(leadObj.ownerID);
+        }
+        Map<Id,User> userRoleMap = new Map<Id,User>([SELECT id,UserRoleId, UserRole.Name, Name FROM User WHERE Id IN :setOwnerId]);
+        for(Lead leadObj : leadList) {           
+            //New Updation as per Original Owner Detail requirement.
+            if(userRoleMap != null && leadObj.OwnerId != null && userRoleMap.get(leadObj.OwnerId) != null){
+                //For Storing Original Owner Details.
+                if(!userRoleMap.get(leadObj.OwnerId).Name.equalsIgnoreCase('LAR System User')){
+                    leadObj.Original_Lead_Owner_Id__c = leadObj.OwnerId;
+                    leadObj.Original_Lead_Owner_Name__c = userRoleMap.get(leadObj.OwnerId).Name;
+                }                       
+                if(userRoleMap.get(leadObj.OwnerId).UserRole.Name != null) {
+                    String[] strRoleSplit = userRoleMap.get(leadObj.OwnerId).UserRole.Name.split(' ');
+                    if(strRoleSplit != null && strRoleSplit.size()>0) {   
+                        for(string strBrand : strRoleSplit) {
+                            if(strBrand.equalsIgnoreCase('UK')) {
+                                leadObj.Lead_Brand_Name__c = 'RingCentral UK';
+                                break;  
+                            }
+                        }
+                    } 
+                }                      
+            }
+        }
+    } 
+    /*******************************************************************************************************************/
+}
