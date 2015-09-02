@@ -1,0 +1,60 @@
+  /******************************** UPDATE ULIMATE PARTNER ACCOUNT INTO LEAD ON INSERT-UPDATE ***********************************************/
+    public static void getLeadUltimatePartnerId(List<Lead> leadList, Map<Id, Lead> oldMap, Map<ID,Schema.RecordTypeInfo> rtMapByName) {
+        Map<String, Account> mapPartnerIdToAccount = new Map<String, Account>(); // Partner Id to Account Object Map
+        Map<String,id> mapPartnerIdToUltAccId = new Map<String, Id>(); // Ultimate Partner Id to Account Object Map
+        Set<Id> ultimateParentAccIdSet = new Set<Id>(); // Ultimate Partner Id Set
+        Map<Id, Account> mapAccountUltParentAccdet = new Map<Id, Account>(); // Partner Id to Ultimate Partner Id Map
+        
+        Set<String> partnerIds = new Set<String>();
+        for(Lead leadObj : leadList) {
+          if(leadObj.recordTypeId != null && rtMapByName.get(leadObj.RecordTypeId).getName() == 'Partner Leads'){
+              Lead oldLeadObj = (oldMap == null ? null : oldMap.get(leadObj.Id));
+              if(String.isBlank(leadObj.Ultimate_Parent_Account_ID__c) || (oldLeadObj != null && leadObj.LeadPartnerID__c != oldLeadObj.LeadPartnerID__c)) {
+                  if(!String.isBlank(leadObj.LeadPartnerID__c)) {
+                      partnerIds.add(leadObj.LeadPartnerID__c);
+                  } else {
+                      leadObj.Ultimate_Parent_Account_ID__c = null;
+                      leadObj.Ultimate_Parent_Account_Name__c = null;
+                      leadObj.Ultimate_Parent_Account_Partner_ID__c = null;
+                      leadObj.Partner_Account_Name__c = null;
+                      leadObj.Current_Owner_Name__c = null;
+                  }
+              }
+          }
+        }        
+
+        if(partnerIds.size() != 0) {
+            List<Account> accountList = [SELECT Id, Name,Current_Owner_Name__c, Ultimate_Parent_Account_ID__c, Partner_Id__c, Var_territory__c FROM Account 
+                                        WHERE Partner_Id__c IN: partnerIds AND RecordType.Name = 'Partner Account' ORDER BY LastModifiedDate ASC]; // Most recent will replace the old account thats why chose ASC
+            for(Account accObj: accountList) {
+                mapPartnerIdToAccount.put(accObj.Partner_Id__c,accObj);
+                ultimateParentAccIdSet.add(accObj.Ultimate_Parent_Account_ID__c);
+                mapPartnerIdToUltAccId.put(accObj.Partner_Id__c,accObj.Ultimate_Parent_Account_ID__c);
+            }
+            mapAccountUltParentAccdet = new Map<Id,Account>([SELECT Id,Name,Current_Owner_Name__c,Partner_Id__c
+                                                                    FROM Account WHERE 
+                                                                Id IN :ultimateParentAccIdSet]); 
+            for(Lead leadObj : leadList) {
+                Lead oldLeadObj = (oldMap == null ? null : oldMap.get(leadObj.Id));
+                if(String.isBlank(leadObj.Ultimate_Parent_Account_ID__c) || (oldLeadObj != null && leadObj.LeadPartnerID__c != oldLeadObj.LeadPartnerID__c)) {
+                    if(!String.isBlank(leadObj.LeadPartnerID__c)) {
+                        if(mapPartnerIdToAccount != null && mapPartnerIdToAccount.get(leadObj.LeadPartnerID__c) != null) {
+                            leadObj.Partner_Account_Name__c = mapPartnerIdToAccount.get(leadObj.LeadPartnerID__c).Name;
+                            leadObj.Current_Owner_Name__c = mapPartnerIdToAccount.get(leadObj.LeadPartnerID__c).Current_Owner_Name__c;      
+                            //Case #03765152                       
+                            leadObj.Var_territory__c = mapPartnerIdToAccount.get(leadObj.LeadPartnerID__c).Var_territory__c;
+                            //Case #03765152 
+                            
+                            if(mapAccountUltParentAccdet != null && mapPartnerIdToAccount.get(leadObj.LeadPartnerID__c).Ultimate_Parent_Account_ID__c != null &&
+                                mapAccountUltParentAccdet.get(mapPartnerIdToAccount.get(leadObj.LeadPartnerID__c).Ultimate_Parent_Account_ID__c) != null) {
+                                leadObj.Ultimate_Parent_Account_ID__c = mapAccountUltParentAccdet.get(mapPartnerIdToAccount.get(leadObj.LeadPartnerID__c).Ultimate_Parent_Account_ID__c).Id;
+                                leadObj.Ultimate_Parent_Account_Name__c = mapAccountUltParentAccdet.get(mapPartnerIdToAccount.get(leadObj.LeadPartnerID__c).Ultimate_Parent_Account_ID__c).Name;
+                                leadObj.Ultimate_Parent_Account_Partner_ID__c = mapAccountUltParentAccdet.get(mapPartnerIdToAccount.get(leadObj.LeadPartnerID__c).Ultimate_Parent_Account_ID__c).Partner_id__c;
+                            }
+                        }  
+                    } 
+                }
+            }
+        }
+    }
+    /**********************************************************************************************************************/
