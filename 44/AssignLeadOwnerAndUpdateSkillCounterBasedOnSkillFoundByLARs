@@ -1,0 +1,66 @@
+ /*******************************Assign Lead owner and update Skill Counter Based on Skill found by LARs*******************************/ 
+    public static Map<Id, Skill__c> assignLeadPerLAR(Lead leadObj, List<Id> finalSkillList, Map<Id, Skill__c> skillsMap,
+                            List<User_Skill__c> allUserSkills,Map<Id, List<User_Skill__c>> skillsToUserSkills ) {
+        if(finalSkillList.size() != 0) {
+            Id currentSkillId = finalSkillList.get(0);
+            Skill__c skillObj = skillsMap.get(currentSkillId);
+            Integer leadCount = Integer.valueOf(''+(skillObj.CurrentUserIndex__c == null ? 0 : skillObj.CurrentUserIndex__c));
+            if(finalSkillList.size() != 1) {
+                    Integer larGlobalIndex = Integer.valueOf(''+(skillObj.GlobalUserSkillIndex__c == null ? 0 : skillObj.GlobalUserSkillIndex__c));
+                    if(larGlobalIndex == null || larGlobalIndex >= allUserSkills.size() ) {
+                        larGlobalIndex = 0;
+                    }
+                    leadObj.Assignment_Source_hidden__c = 'LARs';
+                    leadObj.OwnerId = allUserSkills.get(larGlobalIndex).User__c;
+                    leadObj.Skill_Name__c = skillObj.Name;
+                    Integer previousSize = 0;
+                    for(Id skillId : finalSkillList) {
+                        if(skillId != null) {
+                            Integer currentSize = (skillsToUserSkills.get(skillId) == null ? 0 :  skillsToUserSkills.get(skillId).size());
+                            Integer countSum = currentSize+previousSize;
+                            if(countSum > larGlobalIndex) {
+                                Integer offset = 0;
+                                if(previousSize == 0) {
+                                    offset = 0;
+                                } else {
+                                    offset = countSum - currentSize;
+                                }
+                                currentSkillId = skillId;
+                                leadCount = larGlobalIndex - offset;
+                                Skill__c skillObjNew = skillsMap.get(skillId);
+                                ++leadCount;
+                                skillObjNew.CurrentUserIndex__c = leadCount;
+                                skillsMap.put(skillId, skillObjNew);
+                                break;
+                            }
+                            previousSize += currentSize;
+                        }
+                    }
+                    
+                    ++larGlobalIndex;
+                    for(Id skillId : finalSkillList) {
+                        if(skillId != null) {
+                            Skill__c skillObjNew = skillsMap.get(skillId);
+                            skillObjNew.GlobalUserSkillIndex__c = larGlobalIndex;
+                            skillsMap.put(skillId, skillObjNew);
+                        }
+                    }
+            } else {
+                Id skillId = currentSkillId;
+                Integer currentSize = (skillsToUserSkills.get(skillId) == null ? 0 :  skillsToUserSkills.get(skillId).size());
+                if(leadCount == null || leadCount >= currentSize) {
+                    leadCount = 0;
+                }
+                
+                leadObj.Assignment_Source_hidden__c = 'LARs';
+                leadObj.OwnerId = skillsToUserSkills.get(skillId).get(leadCount).User__c;
+                leadObj.Skill_Name__c = skillObj.Name;
+                Skill__c skillObjNew = skillsMap.get(skillId);
+                ++leadCount;
+                skillObjNew.CurrentUserIndex__c = leadCount;
+                skillsMap.put(skillId, skillObjNew);                 
+            }
+        }
+        return skillsMap;
+    }
+    /*************************************************************************************************************************************/
