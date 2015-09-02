@@ -1,0 +1,20 @@
+ /**************************************************STATIC VARIABLE DECLARATION*********************************************************/
+    public static final Id RCSF_SYNC = '005800000036sJJ';
+    public static Boolean triggerToByPassConvertLead = false;
+    public static Boolean isRealUser = false;
+    public static Boolean canUpdateActiveDate = false;
+    public static Map<String,Boolean> invalidStatusMap = new Map<String,Boolean>{'0. Downgraded'=>true,'X. Open'=>true,'X. Suspect'=>true};
+    private static final String BT_BUSINESS;
+  
+  static{
+    if(!Test.isRunningTest()){
+      BT_BUSINESS = RcDealHealper.getBTBrand();
+    }else{
+      BT_BUSINESS = 'BT Business';
+    }
+  }
+    public static void byPassTrgrsAtConvertLead() {
+        triggerToByPassConvertLead = true;
+    }
+    public static String PARTNER_CAMPAIGN_NAME = 'Partner Lead Campaign';
+    /**************************************************************************************************************************************/
