@@ -1,0 +1,28 @@
+/************************************UPDATE Partner_Account_Current_Owner_Email__c Field of Lead**********************/
+    public static void updatePartnerLeadCurrentOwnerEmail(List<Lead> newleadList, map<Id,Lead> newLeadMap, map<Id,Lead> oldLeadMap,
+                                Map<ID,Schema.RecordTypeInfo> rtMapByName) {
+        try {
+            set<Id> partnerOwnerIdSet = new set<Id>(); 
+            for(Lead leadObj : newleadList) {
+                if(leadObj.recordTypeId != null && rtMapByName.get(leadObj.recordTypeId).getName() == 'Partner Leads' 
+                            && leadObj.Partner_Lead_Owner__c != null && (oldLeadMap == null || 
+                            oldLeadMap.get(leadObj.id).Partner_Lead_Owner__c != newLeadMap.get(leadObj.id).Partner_Lead_Owner__c)) {
+                    partnerOwnerIdSet.add(leadObj.Partner_Lead_Owner__c);
+                }
+            }
+            map<Id,User> userIdToAccountMap = new  map<Id,User>();
+            if(partnerOwnerIdSet.size()>0) {
+                userIdToAccountMap = new  map<Id,User>([select contact.Account.Current_Owner__c, contact.Account.Current_Owner_Email__c 
+                                                                    from User where Id IN :partnerOwnerIdSet]);
+                for(Lead leadObj : newleadList) {
+                    if(userIdToAccountMap != null && rtMapByName.get(leadObj.recordTypeId).getName() == 'Partner Leads' 
+                                && leadObj.Partner_Lead_Owner__c != null && userIdToAccountMap.get(leadObj.Partner_Lead_Owner__c) != null) {
+                        leadObj.Partner_Account_Current_Owner_Email__c = userIdToAccountMap.get(leadObj.Partner_Lead_Owner__c).contact.Account.Current_Owner_Email__c; 
+                    } else {
+                        leadObj.Partner_Account_Current_Owner_Email__c = null;
+                    }
+                }   
+            }
+        } catch(Exception ex) {}
+    } 
+    /**********************************************************************************************************************/
