@@ -1,0 +1,91 @@
+/**********************************UDPATE LEAD ACTIVE DATE BASED ON OWNER AND STATUS****************************************************/
+    public static void updateLeadActiveDate(List<Lead> newLeadList,Map<Id,Lead> leadOldMap) {
+        try {
+            map<string,string> mapCSProtectionLeadUser = new map<string,string>();
+            for(ProtectionLeadUsers__c csObj : [SELECT UserId__c FROM ProtectionLeadUsers__c where UserId__c != null]) {
+                if(csObj.UserId__c.length() > 15) {
+                    mapCSProtectionLeadUser.put(csObj.UserId__c.subString(0,15),csObj.UserId__c.subString(0,15));
+                } else {
+                    mapCSProtectionLeadUser.put(csObj.UserId__c,csObj.UserId__c);
+                }           
+            }
+             
+            for(Lead newLeadObj : newLeadList) {
+                Lead oldLeadObj = leadOldMap != null ? leadOldMap.get(newLeadObj.id) : null;
+                isRealUser = false;
+                canUpdateActiveDate = false;
+                String ownerId18Dig = newLeadObj.OwnerId;
+                String ownerId15Dig = '';
+                if(ownerId18Dig !='' && ownerId18Dig.length() >15){
+                    ownerId15Dig = ownerId18Dig.subString(0,15);
+                }
+                if(mapCSProtectionLeadUser != null && mapCSProtectionLeadUser.get(ownerId15Dig) == null) {
+                    isRealUser = true;
+                }
+                Boolean invalidNewStatus = (invalidStatusMap.get(newLeadObj.status)== null ? false : true);
+                Boolean invalidOldStatus = (oldLeadObj != null && invalidStatusMap.get(oldLeadObj.status)== null ? false : true);       
+                Boolean isOwnerChanged = (oldLeadObj == null || oldLeadObj.ownerId == newLeadObj.ownerId) ? false : true;
+                
+                String newStatus = newLeadObj.status;
+                String oldStatus = (oldLeadObj == null ? null : oldLeadObj.status);  
+                
+                if(oldLeadObj == null) { // Insert
+                    if(!isRealUser && !invalidNewStatus) { // Owner [System User] and Status [Valid]
+                        canUpdateActiveDate = false;
+                    } else if(!isRealUser && invalidNewStatus) { // Owner [System User] and Status [Invalid]
+                        canUpdateActiveDate = false;
+                    } else if(isRealUser && !invalidNewStatus) { // Owner [Real User] and Status [Valid]
+                        canUpdateActiveDate = true;
+                    } else if(isRealUser && invalidNewStatus) { // Owner [Real User] and Status [Invalid]
+                        canUpdateActiveDate = false;
+                    }
+                } else { // Update
+                    if(isRealUser && !isOwnerChanged && !invalidOldStatus && !invalidNewStatus && (newStatus != oldStatus)) {// Owner Unchanged [Real User] and Status Changed [Valid -> Valid]
+                        canUpdateActiveDate = false;
+                    } else if(isRealUser && isOwnerChanged && !invalidOldStatus && !invalidNewStatus && (newStatus != oldStatus)) {// Owner Changed [Real to Real] and Status Changed [Valid -> Valid]
+                        canUpdateActiveDate = true;
+                    } else if(isRealUser && !isOwnerChanged && !invalidNewStatus && (newStatus == oldStatus)) {//Owner Changed [Real to Real] and Status Unchanged [Valid]
+                        canUpdateActiveDate = true;
+                    } else if(!isRealUser && !isOwnerChanged && invalidOldStatus && !invalidNewStatus) { // Owner Unchanged [System User] and Status Changed [InValid -> Valid]
+                        canUpdateActiveDate = false;
+                    } else if(!isRealUser && !isOwnerChanged && invalidOldStatus && invalidNewStatus) { // Owner Unchanged [System User] and Status Changed [InValid -> Invalid]
+                        canUpdateActiveDate = false;
+                    } else if(!isRealUser && !isOwnerChanged && !invalidOldStatus && invalidNewStatus) { // Owner Unchanged [System User] and Status Changed [Valid -> InValid]
+                        canUpdateActiveDate = false;
+                    } else if(!isRealUser && !isOwnerChanged && !invalidOldStatus && !invalidNewStatus) {// Owner Unchanged [System User] and Status Changed [Valid -> Valid]
+                        canUpdateActiveDate = false;
+                    } else if(isRealUser && isOwnerChanged && invalidNewStatus && (newStatus == oldStatus)) {// Owner Changed [Real User] and Status Unchanged [InValid]
+                        canUpdateActiveDate = false;
+                    } else if(isRealUser && isOwnerChanged && !invalidNewStatus && (newStatus == oldStatus)) {// Owner Changed [Real User] and Status Unchanged [Valid]
+                        canUpdateActiveDate = true;
+                    } else if(isRealUser && isOwnerChanged && !invalidNewStatus && invalidOldStatus 
+                                                                                && (newStatus != oldStatus)) {// Owner Changed [Real User] and Status Changed [InValid -> Valid]
+                        canUpdateActiveDate = true;
+                    } else if(isRealUser && isOwnerChanged && invalidNewStatus && invalidOldStatus 
+                                                                                && (newStatus != oldStatus)) {// Owner Changed [Real User] and Status Changed [Invalid -> InValid]
+                        canUpdateActiveDate = false;
+                    } else if(isRealUser && isOwnerChanged && invalidNewStatus && !invalidOldStatus 
+                                                                                && (newStatus != oldStatus)) {// Owner Changed [Real User] and Status Changed [Valid -> InValid]
+                        canUpdateActiveDate = false;
+                    } else if(isRealUser && isOwnerChanged && !invalidNewStatus && !invalidOldStatus 
+                                                                                && (newStatus != oldStatus)) {// Owner Changed [Real User] and Status Changed [Valid -> Valid]
+                        canUpdateActiveDate = true;
+                    } else if(!isRealUser && isOwnerChanged && invalidNewStatus && !invalidOldStatus 
+                                                                                && (newStatus != oldStatus)) {// Owner Changed [System User] and Status Changed [Valid -> InValid]
+                        canUpdateActiveDate = false;
+                    } else if(!isRealUser && isOwnerChanged && !invalidNewStatus && invalidOldStatus 
+                                                                                 && (newStatus != oldStatus)) {// Owner Changed [System User] and Status Changed [InValid -> Valid]
+                        canUpdateActiveDate = false;
+                    } else if(!isOwnerChanged && (newStatus == oldStatus)) { // Owner Unchaged and Status Unchanged
+                        canUpdateActiveDate = false;
+                    } else if(isRealUser && !isOwnerChanged && invalidOldStatus && !invalidNewStatus && (newStatus != oldStatus)){// Owner Unchanged [Real User] and Status Changed [Invalid -> Valid]
+                        canUpdateActiveDate = true;
+                    }
+                }
+                if(canUpdateActiveDate == true){
+                    newLeadObj.Lead_Active_Date__c = System.now();
+                }   
+            }
+        } catch(Exception ex) {}
+    }
+    /**********************************************************************************************************************************/
