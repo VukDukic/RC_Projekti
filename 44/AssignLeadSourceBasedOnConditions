@@ -1,0 +1,27 @@
+   /*******************************************ASSIGN LEAD SOURCE BASED ON CONDITIONS****************************************************/
+    public static void assignLeadSource(Lead leadObj) {
+      set<String> validLeadSourceSet = new Set<String>{'Initial','About To Be Cancelled','Vista Print'};
+      set<String> validBrandNameSet = new Set<String>{BT_BUSINESS,'BT','RingCentral UK'};
+      set<string> validPromotionSet = new Set<String>{'British Telecom','BT RingCentral','RC Partner Program Vista Print UK Studio',
+                              'Vista Print UK Telemarkeing','Vista Print UK','Vista UK','Voicemail - UK','Call Management - UK',
+                              '2009 UKRC Campaign','Fax - UK '};
+        set<string> validTimeZoneSet = new Set<String> {'British Summer Time','Greenwich Mean Time','GMT','CET'};
+        if(validLeadSourceSet.contains(leadObj.LeadSource)){                
+            if((leadObj.Email != null && leadObj.Email.endsWith('.co.uk')) 
+                || leadObj.Country == 'UK' 
+                || (leadObj.phone == null 
+                || leadObj.phone.contains('+'))
+                || validBrandNameSet.contains(leadObj.Lead_Brand_Name__c)
+            || validPromotionSet.contains(leadObj.Promotion__c)
+            || validTimeZoneSet.contains(leadObj.Timezone__c)){
+                if(leadObj.LeadSource == 'Initial') {
+                    leadObj.LeadSource = 'Initial UK';
+                } else if(leadObj.LeadSource == 'About To Be Cancelled') {
+                    leadObj.LeadSource = 'About To Be Cancelled UK';
+                } else if(leadObj.LeadSource == 'Vista Print') {
+                    leadObj.LeadSource = 'Vista Print UK';
+                }
+            }
+        }
+    }
+    /*************************************************************************************************************************************/
