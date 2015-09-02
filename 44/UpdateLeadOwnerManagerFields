@@ -1,0 +1,37 @@
+  /*********************************************Update Lead Owner Manager Fields********************************************************/
+    public static void getLeadOwnerManager(List<Lead> leadList) {
+        Set<Id> ownerIds = new Set<Id>();
+        for(Lead leadObj : leadList) {
+            if(leadObj.OwnerId != '005800000037xj5'){
+                ownerIds.add(leadObj.OwnerId);
+            }
+        }
+        Set<String> managerIds = new Set<String>();
+        Map<Id, User> managerMap = new Map<Id, User>();
+        Map<id,User> userToManagerMap = new Map<id,User>();
+        if(ownerIds.size() != 0) {
+            userToManagerMap = new Map<id, User>([SELECT Phone, Manager.Email, Manager.Name, ManagerId, Mkto_Reply_Email__c  
+                                                    From User WHERE id IN: ownerIds]);
+        }
+         
+        for(Lead leadObj : leadList) {
+            if(leadObj.OwnerId == '005800000037xj5'){
+                leadObj.Owner_Manager_Email__c = 'daved@ringcentral.com';
+                leadObj.Owner_Manager_Name__c = 'Dave Demink'; 
+            } else {                                   
+                try{
+                    User userObj = userToManagerMap.get(leadObj.OwnerId);
+                    if(userObj != null){
+                      leadObj.Owner_Manager_Email__c = userObj.Manager.email;
+                      leadObj.Owner_Manager_Name__c = userObj.Manager.name;
+                      leadObj.Lead_Owner_Phone_Number__c = userObj.Phone;
+                      leadObj.Mkto_Reply_Email__c = userObj.Mkto_Reply_Email__c;
+                    }
+                }
+                catch(System.Exception e){
+                    // system.debug('linenum: 422');
+                }               
+            } 
+        }
+    }
+    /******************************************************************************************************************************************/
