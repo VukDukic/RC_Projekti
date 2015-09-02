@@ -1,0 +1,17 @@
+ /**************************************Return Account Maps if Lead is SOLVE THEN SELL************************************************/
+    public static Map<String, Account> findAccountMap(List<Lead> leadList) {
+        Map<String, Account> userToAccountMap = new Map<String, Account>();
+        List<String> userIds = new List<String>();
+        for(Lead leadObj : leadList) {
+            if(leadObj.User_ID__c != null 
+            && leadObj.LeadSource == 'Solve then Sell' 
+            || leadObj.BMID__c == 'SOLVETHENSELL') {
+                userIds.add(leadObj.User_ID__c);
+            }
+        }
+        for(Account accObj : [SELECT Id, RC_User_ID__c FROM Account WHERE RC_User_ID__c IN :userIds AND RC_User_ID__c != '']) {     
+            userToAccountMap.put(accObj.RC_User_ID__c, accObj);
+        }
+        return userToAccountMap;
+    }
+    /************************************************************************************************************************************/
