@@ -1,0 +1,41 @@
+public static String validatePhoneNumber(String phoneStr, String countryStr){
+
+  String newPhoneFormat='';
+
+    if(String.isNotBlank(countryStr) && String.isNotBlank(phoneStr)){
+
+    if('United Kingdom'.equalsIgnoreCase(countryStr) || 'UK'.equalsIgnoreCase(countryStr))){
+
+//Check if Phone Number contains any alphabet like (408-429-0847 ext 543). 
+// Returns Initial Number (408-429-0847) before extension(Text).
+
+  String initialPhoneNum = ValidationUtility.checkPhoneContainsAlphabets(phoneStr);
+
+    if(initialPhoneNum==''){
+
+        initialPhoneNum = phoneStr; 
+
+} 
+
+//Fetch only integer value from Phone Number by removing any special character.
+
+String strPhoneValue = ValidationUtility.extractIntegerFromPhone(initialPhoneNum);
+
+    if(strPhoneValue!=''){ 
+
+      if(strPhoneValue.trim().startsWith('0')){
+
+          newPhoneFormat = '+44' + strPhoneValue.trim().substring(1);
+
+      } else if(strPhoneValue.trim().startsWith('44')){
+
+          newPhoneFormat = '+44' + strPhoneValue.trim().substring(2);
+
+      } else {
+
+          newPhoneFormat = '+44' + strPhoneValue;
+      }
+      }
+    }
+  }
+}
