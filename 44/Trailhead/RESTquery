@@ -1,0 +1,2 @@
+/services/data/v <API version> .0/query?q=
+SELECT+Id+,+EventType+,+LogDate+,+LogFileLength+,+LogFile+FROM+EventLogFile+WHERE+EventType+=+'ReportExport'.
