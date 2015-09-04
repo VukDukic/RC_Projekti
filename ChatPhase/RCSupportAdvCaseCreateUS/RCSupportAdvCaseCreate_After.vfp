@@ -1,0 +1,1194 @@
+<apex:page standardController="Case" extensions="RCSupportAdvCaseCreate" showHeader="false" sidebar="false" standardStylesheets="false" docType="html-5.0" cache="false">
+ <link href="{!URLFOR($Resource.RCSupportPortal, 'supportPortal/css/jqueryValidation.css')}" type="text/css" rel="stylesheet"  media="screen" />
+     <link href="{!URLFOR($Resource.RCSupportPortal, 'supportPortal/colorbox.css')}" type="text/css" rel="stylesheet"  media="screen" />
+     <script type="text/javascript">
+        var __sfdcSessionId = '{!GETSESSIONID()}'; 
+     </script>
+     <script src="../../soap/ajax/24.0/connection.js" type="text/javascript"></script>
+     <style>
+        #cboxOverlay{background:#000;}
+        #fade {
+            display: none;
+            background: #000; 
+            position: fixed; left: 0; top: 0; 
+            z-index: 9999;
+            width: 100%; height: 100%;
+            opacity: .65;
+            /*z-index: 99;*/
+        }
+        .errorMsg {
+          display:inline;
+        }
+        .contactMsgPanel label { display:inline !important;}
+          .rc-result-Article .page_navigation .next_link, .rc-result-Article .page_navigation .previous_link {
+            color: #000;
+            margin: 0px;
+         }
+        .rc-result-Article .page_navigation a {
+          font-size: 12px;
+          margin: 0 10px;
+        }
+        .rc-result-Article .active_page {
+            background: url({!URLFOR($Resource.RCSupportPortal, 'supportPortal/img/sprite.png')}) 0 -477px no-repeat;
+            color: #333333;
+        }
+       .rc-result-Article .page_link {
+            width: 23px;
+            height: 23px;
+            display: inline-block;
+            line-height: 23px;
+            text-align: center;
+            margin-left: 5px;
+        }
+        .rc-result-Article .page_navigation {
+             margin-top: 30px;
+        }
+        .rc-result-Article .no_more {
+            color: #cecece !important;
+            cursor: default !important;
+            text-decoration: none !important;
+            margin-left: 5px;
+        }
+        .form-new-case label {
+            font-size:14px !important;
+        }
+        .severity-call {
+            font-size:13px !important;
+        }
+        .form-new-case .selector span {
+            //color: #949A9F;
+            color: #778899;
+            font-size:13px;
+        }
+         .example {
+            padding-top:5px;
+            font-size:13px;
+       }
+       .sever-def dd {
+            width:550px !important;
+       }
+       #tblConatctDetail input[type="text"]{
+          width: 214px !important;
+       }
+       #disabledDiv input[type="text"]{
+          width: 214px !important;
+       }
+     .labelTd{
+       text-align:right;
+       width:75px;
+     }
+     .defaultText {
+        width: 214px !important;
+     }
+     .contactpanel {
+        width:auto;
+        height:auto;
+        margin:auto;
+        background: url('{!URLFOR($Resource.RCSupportPortal, 'supportPortal/img/LC-DD-three-column.png')}') 0 140px no-repeat;
+        padding-bottom:30px;
+        margin-left: 0px;
+        width:657px;
+        margin-top: -25px;
+     }
+    .contactpanelNew {
+        width:auto;
+        height:205px;
+        margin:auto;
+        background: url('{!URLFOR($Resource.RCSupportPortal, 'supportPortal/img/LC-DD-three-column.png')}') 0 220px no-repeat;
+        padding-bottom:30px;
+        margin-left: 0px;
+        width:657px;
+        margin-top: -25px;
+     }
+      input[type="radio"], input[type="checkbox"] { border:none; } 
+     
+     .defaultText { 
+        width: 275px;
+        border-radius: 5px !important;
+        padding-left: 7px;
+        height: 22px;
+        border : 1px solid #A5A6A5 !important;
+        color:#474747;
+        font-weight:bolder;
+        box-shadow:0px 1px 19px 0px lightgray inset;
+    } 
+    
+    .defaultTextActive { 
+        color: #9A9A9A;  
+        font-style: italic; 
+        width: 275px;
+        border-radius: 10px;      
+        padding-left: 7px;
+        height: 22px;
+        border : 1px solid #A5A6A5;
+        font-weight:normal;
+    } 
+    .textlabel {
+        color: #084B8A;
+        font-size: 13px;
+    }
+    .labelClass {
+        border: 1px solid lightgray;
+        box-shadow: 0px 0px 15px 0px lightgray inset;
+        border-radius:5px;
+        margin-bottom:10px;
+    }
+    .contactpanelNew label.error{
+      margin-left: 0px;
+    }
+    .disableCls {
+        background:#FAFAFA !important;
+    }
+    .uniform:focus {
+        border: 1px solid #ccc !important;
+    }
+    .helpInfoPanel {
+        margin-top:10px;
+        position: absolute; 
+        width: 300px; 
+        /*border: 1px solid rgb(153, 153, 153); */
+        border: 1px solid orange;
+        border-top-left-radius: 4px; 
+        border-top-right-radius: 4px; 
+        border-bottom-right-radius: 4px; 
+        border-bottom-left-radius: 4px; 
+        color: white; 
+        opacity: 0.9; 
+        z-index: 99;
+    }
+    .helpInfoContent {
+        /*background: #f0f0f0;*/
+        background: white;
+        padding: 20px;
+        /*font-weight: bolder;*/
+        color : #797979;
+        /*box-shadow: 1px 1px 60px 2px #ccc inset;*/
+        box-shadow: 1px 1px 60px 2px white inset;
+        border-radius: 12px;
+        -moz-border-radius: 12px;
+        -webkit-border-radius: 12px;
+        behavior: url("{!URLFOR($Resource.RCSupportPortal, 'supportPortal/PIE.htc')}");
+    }
+    
+    div.helpInfoPanel:after {
+      content: "";
+      position: absolute;
+      width: 0;
+      height: 0;
+      border-width: 10px;
+      border-style: solid;
+      border-color: transparent transparent #999 transparent;
+      top: -21px;
+      left: 10px;
+   } 
+    
+   .arrow_box {
+        position: absolute;
+        background: white;
+        border: 2px solid orange;
+        width: 300px; 
+        opacity: 0.9; 
+        z-index: 99;
+        left: 106%;
+        top: -18%;
+        border-radius: 12px;
+        -moz-border-radius: 12px;
+        -webkit-border-radius: 12px;
+        behavior: url("{!URLFOR($Resource.RCSupportPortal, 'supportPortal/PIE.htc')}");
+    }
+    .arrow_box:after, .arrow_box:before {
+        right: 100%;
+        border: solid transparent;
+        content: " ";
+        height: 0;
+        width: 0;
+        position: absolute;
+        pointer-events: none;
+    }
+    .arrow_box:after {
+        border-color: rgba(0, 0, 0, 0);
+        border-right-color: white;
+        border-width: 12px;
+        top: 50%;
+        margin-top: -12px;
+    }
+    .arrow_box:before {
+        border-color: rgba(0, 0, 0, 0);
+        border-right-color: orange;
+        border-width: 15px;
+        top: 50%;
+        margin-top: -15px;
+    }
+    
+    #overlayNew {
+            background: no-repeat scroll top center gray;
+            border: 0px solid #000000;
+            bottom: 0;
+            left: 0;
+            opacity: 0.75;
+            position: absolute;
+            top: 0;
+            display: none;
+            width: 100%;
+            z-index: 1000;
+            height:1000px;
+        }
+    
+    .textDiv{
+        font-family: Helvetica Neue, Arial, Helvetica, sans-serif; 
+        font-weight: normal; 
+        color: #777; 
+        width: 616px; 
+        padding-left: 13px; 
+        margin-left: 0px; 
+        background: rgb(252, 252, 252); 
+        -moz-border-radius: 3px; 
+        border-radius: 10px; 
+        font-size: 15px; 
+        text-align: left;
+        border : 1px solid gray;
+        padding-bottom:12px;
+        padding-top:13px;
+        display:none;
+    }
+    </style>    
+    <script src="{!URLFOR($Resource.RCSupportPortal, 'supportPortal/js/libs/jquery.colorbox.js')}"></script>
+    <script>
+        function closewin() {
+            window.onbeforeunload = function () {
+                return "If you navigate away from this page the information that you have entered may not be saved.";
+            }
+            $(function () {
+                $("a").click(function () {
+                    window.onbeforeunload = null;
+                });
+            });
+            $(function () {
+                $("input1").click(function () {
+                    window.onbeforeunload = null;
+                });
+            });
+            $(function () {
+                $("apex:commandButton").click(function () {
+                    window.onbeforeunload = null;
+                });
+            });
+        }
+    </script>
+     <script>
+     function submitcase(status) {
+        try {
+            if(status == 1) {
+                // s.pageName=document.referrer;
+                s.events="Event22";
+            } else {
+                s.events="Event23";
+            }
+            s.t();
+        } catch(x) {}
+     }
+       function showSeverityDetail() {
+         $('#Severity').show();
+         $('body').append('<div id="fade"></div>'); //Add the fade layer to bottom of the body tag.
+         $('#fade').css({'filter' : 'alpha(opacity=80)'}).fadeIn(); //Fade in the fade layer 
+       } 
+       function hideSeverityDetail(){
+             $('#Severity').hide();
+             $("#fade").fadeOut("fast");
+             $("#fade").remove();
+       } 
+       function validateFormInput(){
+         if($('.uniform').value()==''){
+            $('.assistance.errorMsg').show();
+         }
+        return false;
+      }
+        $(document).ready(function() {
+            resetValue();
+            $('#tblConatctDetail input').attr('disabled','disabled');
+        });
+      function selectChkBox(objId) {
+            if(objId == 'chk2') {
+                try {
+            
+            
+           /*  $("#chk2").click(function(){*/
+                $("#chk2").attr('checked','checked');
+                $('#errorChkBox').hide();
+                $("#chk1").removeAttr('checked');
+                $('input[type=checkbox]').filter(':checked').not('#chk2').attr('checked', false);
+                $('input[type=checkbox]').filter(':checked').not('#chk2').removeAttr('checked');
+                
+                if($("#chk2").is(':checked')){
+                    $('#tblConatctDetail input').removeAttr('disabled');
+                    $(".fname").removeClass("disableCls");
+                    $(".lname").removeClass("disableCls");
+                    $(".phonenum").removeClass("disableCls");
+                    $(".emailadd").attr('disabled','disabled');
+                } else {
+                    resetValue();
+                   
+                } 
+                } catch(x) {alert(x);}
+            /* }); */
+            } else {
+                /* $("#chk1").click(function(){*/
+                    try {
+                    $('#errorChkBox').hide();
+                    $('#errorChkBox1').hide();
+                    /*$(this).attr('checked',true);*/
+                    $("#chk1").attr('checked','checked');
+                    $("#chk2").removeAttr('checked');
+                    $('input[type=checkbox]').filter(':checked').not('#chk1').attr('checked', false);
+                    $('input[type=checkbox]').filter(':checked').not('#chk1').removeAttr('checked');
+                    //$('.errorMsg').hide();
+                    resetValue();
+                    } catch(x) {alert(x);}
+                /* }); */
+            }
+        }
+        function resetValue(){
+            $('#tblConatctDetail input').attr('disabled','disabled');
+              $('.fname').val("{!ConDetail.FirstName}");
+              $('.lname').val("{!ConDetail.LastName}");
+              $('.phonenum').val("{!ConDetail.Phone}");
+              $('.emailadd').val("{!ConDetail.Email}");
+
+              $(".fname").addClass("disableCls");
+              $(".lname").addClass("disableCls");
+              $(".phonenum").addClass("disableCls");
+              $(".emailadd").addClass("disableCls");
+         }
+     </script>
+     <script>
+            function showOverlay() {
+                var o = document.getElementById('overlayNew');
+                o.style.display = 'block';
+            }
+        
+            function hideOverlay() {
+                var o = document.getElementById('overlayNew');
+                o.style.display = 'none';
+            }
+      </script>
+        <div class="status-area">
+          <div class="call-support">New Case</div>
+            <div class="user-login">
+                 <ul>
+                   <li><a href="#">{!$User.FirstName} {!$User.LastName}</a></li> 
+                   <li class="sep">|</li>
+                  <li><a href="{!$Site.CurrentSiteUrl}secur/logout.jsp">Logout</a></li>
+                </ul>
+            </div>
+        </div>
+         <apex:variable var="count1" value="{!1}" />
+        <div class="details">
+            <p id="CaseDEtails">New Case Details</p>
+            <!--<div class="rgt-align">
+                <p class="service">Your Service Level : Premium</p>
+                <p>Response Time : 2 Business Days</p> 
+            </div>-->
+       </div>
+    <div class="new-case">
+        <apex:form styleclass="form-new-case" id="CaseForm" forceSSL="{!isGuestUser}">
+            <apex:outputPanel styleclass="btnContainer pr-270" rendered="{!!isSubmitCase}" >
+               <!--  <apex:variable var="count1" value="{!0}" /> -->
+               <!--class="labelClass" margin-left:5px; -->
+                <div class="contactpanelNew">
+                    <div style="width:100%;">
+                        <label style="color:#797979;cursor:default;">
+                            <h3>Please contact me at:</h3>
+                        </label>
+                    </div>
+                    <div style="width:100%;"> 
+                        <div style="width:100%;">
+                             <div style="float:left;"><h4 style="color:#797979;"> The below contact information is correct:</h4></div>
+                             <div>   
+                                 <input type="checkbox" onclick="selectChkBox('chk1');" id="chk1" style="color:#797979;margin-left: 10px;margin-right: 2px;" value="yes" />Yes
+                                 <input type="checkbox"  id="chk2" onclick="selectChkBox('chk2');" style="color:#797979;margin-left: 10px;margin-right: 2px;" value="no" />No
+                             </div>
+                        </div> 
+                        <div id="errorChkBox" class="errmsg" style ="color:red;font-style: italic;font-size: 14px !important;display:none;width:100%;" >
+                            Please indicate if your contact information is correct or not.
+                        </div>
+                        <div id="errorChkBox1" class="errmsg" style ="color:red;font-style: italic;font-size: 14px !important;display:none;width:100%;" >
+                            Please update your contact information.
+                        </div>
+                    </div>
+                    <div id='tblConatctDetail' style="display:block;height:176px;">
+                        <div style='overflow: hidden;'>
+                            <div style='float:left;'>
+                                <div>
+                                    <apex:outputLabel style="margin-left:0px;" styleclass="textlabel" value="First Name:" for="firstName2"/>
+                                    <apex:inputText styleclass="uniform fname" title="First Name" id="firstName2" value="{!ConDetail.FirstName}" maxlength="40" onclick="hideErrorDiv()"/>
+                                </div>
+                                <div  class="errorMsg" style='padding:0px;'></div>
+                            </div>
+                            <div style='float:right;margin:2px auto;'>
+                                <div>
+                                    <apex:outputLabel style="margin-left:0px;" styleclass="textlabel" value="Last Name:" for="lastName2"/>
+                                    <apex:inputText styleclass="uniform lname" title="Last Name" id="lastName2" value="{!ConDetail.LastName}"   maxlength="80" onclick="hideErrorDiv()"/>
+                                </div>
+                                <div  class="errorMsg" style='padding:0px;'></div>
+                            </div>                         
+                        </div> 
+                        
+                        <div> 
+                            <div style='float:left;position:relative;' class="emailDivP">
+                                <div class="emailDiv" id="emailDiv">
+                                    <div style="float:left;" id="emailDivC">
+                                        <apex:outputLabel style="margin-left:0px;" styleclass="textlabel" value="Email Address:" for="emailAddress2"/>
+                                        <apex:inputText styleclass="uniform emailadd"  title="Email Address" id="emailAddress2" value="{!ConDetail.Email}" disabled="true" onkeydown="return false;" maxlength="255" onclick="hideErrorDiv()"  /> <!-- onmouseout="document.getElementById('popupInfo').style.display='none';" onmouseover="document.getElementById('popupInfo').style.display='';" -->
+                                    </div>
+                                    <div id="popupInfo" style="display:none;" class="arrow_box">
+                                        <div class="helpInfoContent">
+                                            <p>To update your email address, go to <b>
+                                                <apex:OutputPanel rendered="{!if(OR(brandName == 'RINGCENTRAL', brandName == 'RINGCENTRAL CANADA'),true,false)}" >
+                                                    <a href="http://service.ringcentral.com" >
+                                                        http://service.ringcentral.com</a>
+                                                </apex:OutputPanel>
+                                                <apex:OutputPanel rendered="{!!if(OR(brandName == 'RINGCENTRAL', brandName == 'RINGCENTRAL CANADA'),true,false)}" >
+                                                    <a href="http://service.ringcentral.co.uk" >
+                                                        http://service.ringcentral.co.uk</a>
+                                                </apex:OutputPanel>
+                                             </b> and click 
+                                            '<b>My Settings</b>' on the menu bar,  then on your name and extension on the left. Update your email in the middle 
+                                            column, and click <b>save</b>.</p>
+                                        </div>
+                                     </div>
+                                 </div>
+                                <div  class="errorMsg" style='padding:0px;'></div>
+                            </div>
+                            <div style='float:right;' >
+                                <div>
+                                    <apex:outputLabel style="margin-left:0px;" styleclass="textlabel" value="Phone:" for="contactNumber"/>
+                                    <apex:inputText styleclass="uniform phonenum"  title="Phone" id="contactNumber" value="{!ConDetail.Phone}" onblur="this.value=FormatNumber(this.value);" maxlength="255" onclick="hideErrorDiv()"/>
+                                </div>
+                                <div  class="errorMsg" style='padding:0px;'></div>
+                            </div>
+                        </div>
+                    
+                    </div>
+                    <!-- <div class="contactMethodErrorDiv" id="CMId" style ="color:red;font-style: italic;font-size: 14px !important;display:none;width:100%;float:left;">
+                        Please indicate your preferred contact method.
+                    </div>  
+                    <div class="contactMsgPanel" style="width:100%;">
+                        <div style="float:left;width:38%;padding-top:10px;color:#797979;"><h4>I prefer to be contacted by:</h4></div>
+                        <div style="float:left;padding-top:10px;"> 
+                            <input type="radio" id="email" name="PreferrMethod" value="Email" onChange="onChangeRadiovalue(this)"/>Email
+                            <input type="radio" id="phone" name="PreferrMethod" value="Phone" onChange="onChangeRadiovalue(this)"/>Phone
+                              <apex:SelectRadio id="SelectedRadio" styleclass="SelectedRadio" value="{!contactMe}" onChange="onChangeRadiovalue(this)">
+                                 <apex:selectOptions value="{!PreferWay}"/>
+                             </apex:SelectRadio>
+                        </div>
+                   </div>-->
+                </div> 
+              <!--   <input type="submit" value="Continue" class="primary-btn fr" onclick='submitCaseDetail1();'/> -->
+            </apex:outputPanel> 
+        <div >
+           <apex:outputPanel rendered="{!!isSubmitCase}" >
+            <div id="NextCase" class="NextCase">
+                <div class="assistance"> 
+                     <apex:outputlabel for="assistancelabel">I Need Assistance With <!--<span class="star">*</span>--></apex:outputlabel>
+                    <apex:selectList id="assistancelabel" styleclass="uniform selectWidth error"  multiselect="false" size="1" value="{!selectedProduct}" onchange="checkAssistanceVal(this.value);return false;"> 
+                       <apex:selectOptions value="{!productAssistanceItems}" />
+                    </apex:selectList>  
+                    <!-- <span class="errorMsg err2" style='display:none'>Please enter a value</span> -->
+                    <div  class="errorMsg"></div>
+                </div>
+                
+                <div style="height:15px;"></div> 
+                
+                <div class="assistance level2" style="display:none;"> 
+                    <!--  <apex:outputlabel for="assistancelabel2">Product Assistance Lvl2</apex:outputlabel> -->
+                     <apex:selectList id="assistancelabel2" styleclass="uniform selectWidth error select2"  multiselect="false" size="1" value="{!selectedProduct2}" onchange="getOptionsLevel3(this.value);return false;"> 
+                        <!-- <apex:selectOption itemValue="" itemLabel="Please select product issue"/> -->
+                        <apex:selectOptions value="{!productAssistanceItemsLvl2}" />
+                    </apex:selectList>  
+                     
+                     <!-- <select id="listBox" class="uniform selectWidth error" size="1" ></select> -->
+                     <!-- <span class="errorMsg err2" style='display:none'>Please enter a value</span> -->
+                    <div  class="errorMsg"></div>
+                </div> 
+                <script> 
+                    var previousOnload = window.onload;
+                    window.onload = function() {
+                        if (previousOnload) { 
+                            var selectedVal = $("[id$=assistancelabel] option:selected").val();
+                            if(selectedVal == 'Faxing'){
+                                checkAssistanceVal(selectedVal);
+                                return false;
+                            }
+                            previousOnload(); 
+                        } 
+                        
+                    } 
+                </script>
+                <div class="level2" style="height:15px;display:none;"></div> 
+                <div class="assistance level3" style="display:none;"> 
+                     <!-- <apex:outputlabel for="assistancelabel3">Product Assistance Lvl3</apex:outputlabel> -->
+                     <apex:selectList id="assistancelabel3" styleclass="uniform selectWidth error select3"  multiselect="false" size="1" value="{!selectedProduct3}" onChange="getPortalQuestion(this.value);return false;"> 
+                       <!--  <apex:selectOption itemValue="" itemLabel="Please select product issue"/> -->
+                       <apex:selectOptions value="{!productAssistanceItemsLvl3}" />
+                    </apex:selectList>  
+                     
+                     <!-- <select id="listBox" class="uniform selectWidth error" size="1" ></select> -->
+                     <!-- <span class="errorMsg err3" style='display:none'>Please enter a value</span> -->
+                    <div  class="errorMsg"></div>
+                </div>
+                
+                <div class="level3" style="height:15px;display:none;"></div> 
+                <apex:outputPanel id="faxingSoftPhonic">
+                    <script>
+                        if('{!chkValue}' == 'true'){
+                             $("[id$=container31]").css('display','block');
+                        }else{
+                            $("[id$=container31]").css('display','none');
+                        }
+                    </script>
+                    <div class="textDiv" id="container31">
+                        <apex:outputText value="{!strValue}" escape="false"/>
+                    </div>
+                 </apex:outputPanel>
+                <div class="uniform"  id ="container3"  style="font-family: Helvetica Neue, Arial, Helvetica, sans-serif;font-weight: normal;color: #777;border-top: solid 1px #ccc;border-left: solid 1px #ccc;padding-right: 37px;padding-left: 37px;border-bottom: solid 1px #ccc;background: rgb(252, 252, 252);border-right: solid 1px #ccc;-moz-border-radius:3px;border-radius: 10px; display:none;font-size: 15px;text-align:left;" >
+                    <br/>
+                    Thank you for your interest in obtaining RingCentral service for your business. Please contact us at:<br/> <br/>             
+                    800-574-5290 (U.S. and Canada)<br />
+                    925-301-8209 (International)<br/>
+                    <br />
+                    Hours of operation are Monday-Friday 8:00am - 10:00pm ET. A customer sales agent will be happy to assist you with your business needs<br/>
+                    <br/>
+                </div>
+                 <div styleclass="assistance"  id ="container4" style="font-family: Helvetica Neue, Arial, Helvetica, sans-serif;font-weight: normal;color: #777;border-top: solid 1px #ccc;border-left: solid 1px #ccc;padding-right: 37px;padding-left: 37px;background: rgb(252, 252, 252);border-bottom: solid 1px #ccc;border-right: solid 1px #ccc;-moz-border-radius:3px;border-radius: 10px; display:none;font-size: 15px;text-align:left;" >
+                 <br/>
+                   Thank you for contacting RingCentral. Our hours of operation are Monday-Friday 6:00am - 6:00pm PT. <br/>
+                   Please contact us at the number below during these hours or leave a message or agent will get back to you the next business day:<br/>
+                    <br/>
+                   866-733-0810 (U.S. and Canada)<br/>
+                   925-271-7320 (International)<br/>
+                  <br/>
+                </div>
+                <div styleclass="form-new-case"  id ="container2">
+                    <div class="severity">
+                         <apex:outputlabel for="severitylabel">Severity Level <!--<span class="star">*</span>
+                         --></apex:outputlabel>
+                         <apex:selectList id="severitylabel" styleclass="uniform selectWidth" multiselect="false" size="1" value="{!severityLevel}" onchange="closewin();"> 
+                             <apex:selectOptions value="{!caseSeverityItems}"/>
+                         </apex:selectList>
+                        <div  class="errorMsg"></div>
+                        <a class="severity-def" href='javascript:void(0);' onclick='showSeverityDetail();'>Severity Definitions</a>
+                        <!-- <span class="errorMsg">Please enter a value</span -->
+                        <span class="severity-call">For Severity 1 cases, please call RingCentral directly. The support number can be found 
+                        <a href="{!$Site.CurrentSiteUrl}RCCallSupport" class="anchor-ornge">here.</a></span> 
+                </div>
+                <div class="subject-case">
+                    <apex:outputlabel for="subjectlabel">Subject </apex:outputlabel>
+                    <apex:inputField styleClass="uniform" value="{!caseObj.Subject}" id="subjectlabel" onkeydown="closewin();"/>
+                    <div  class="errorMsg"></div>
+                </div>
+                <apex:outputpanel id="assistancePnl">
+                <div class="description-ta">
+                    <apex:outputlabel for="descriptionlabel">Description</apex:outputlabel>
+                    <apex:inputField id="descriptionlabel" styleClass="uniform desc" value="{!caseObj.Description}" onchange="closewin();"/>
+                     <div  class="errorMsg"></div>
+                </div>
+                </apex:outputpanel>
+                <div class="file-upload">
+                    <apex:outputlabel style="cursor:default;">You can add attachments after the case has been created.
+                     </apex:outputlabel>
+                </div>
+                  <div class="btnContainer pr-270">
+                     <input type="submit" value="Next" class="primary-btn fr" onclick='return validateForm();'/> 
+                  </div>
+               </div>
+            </div>
+           </apex:outputPanel>  
+            <apex:outputpanel id="showArticleList" rendered="{!isSubmitCase}">
+                <apex:variable var="count" value="{!0}" />
+                    <knowledge:articleList articleVar="article"  hasMoreVar="hasMore"
+                                    pageSize="1" 
+                                    categories="Brand:RC_US,RCProductVesion:RC2013" 
+                                    keyword="{!caseObj.Subject}">
+                        <apex:variable var="count" value="{!count+1}" />
+                    </knowledge:articleList>
+                 
+            <apex:outputpanel rendered="{!isSubmitCase &&  count==0}">   <!-- rendered="{!isSubmitCase &&  (count==0&& count1>0)}">  -->
+              No articles found.
+            </apex:outputpanel>     
+             
+                <!--<c:RCPortalOverlay />
+                --><div  class="SubmitCaseDiv" >
+                  <apex:outputpanel rendered="{!isSubmitCase && count>0}">   <!-- rendered="{!isSubmitCase && (count>0&& count1>0)}">  -->
+                     <div id ="con1" class="submit-case1">
+                                <h6>Before you submit a case, you might find the following information helpful:</h6>
+                                  <section class="submit-case-area">
+                                     <apex:variable var="count" value="{!0}" />
+                                     <knowledge:articleList articleVar="article"  hasMoreVar="hasMore"
+                                            pageSize="199" 
+                                            categories="Brand:RC_US,RCProductVesion:RC2013" 
+                                            keyword="'{!caseObj.Subject}'">
+                                 <apex:outputText escape="false" rendered="{!count==0 }" value='<div class="rc-result-Article"><section class="paginate" id="paginate">'/>  
+                               <!--   <apex:outputText escape="false" rendered="{!count==0 && count1>0}" value='<div class="rc-result-Article"><section class="paginate" id="paginate">'/>  --> 
+                                 <apex:variable var="count" value="{!count+1}" />
+                                    <article class="article case-submit">    
+                                   
+                                        <h4>
+                                          <a class='articleLink' href="{!$Site.CurrentSiteUrl}knowledge/TOCArticleRendererPkb.apexp?id={!article.id}&Title={!article.title}&urlName={!article.UrlName}&popup=true&retURL={!$CurrentPage.Name}"   title='{!article.title}'>{!article.title}</a>
+                                        </h4>
+                                        <p>{!article.abstract}<br/>
+                                        Date Updated:
+                                     <apex:outputText value="{0,date,MM'/'dd'/'yyyy}">
+                                         <apex:param value="{!article.LastModifiedDate}" /> 
+                                     </apex:outputText>
+                                     <br/></p>
+                                    </article>
+                               </knowledge:articleList>
+                             <apex:outputtext rendered="{!count>0}" escape='false' value='</section> <div class="page_navigation"></div></div>'/>       
+                            <div class="shadow-small">&nbsp;</div>
+                         </section>
+                    </div>
+                     </apex:outputpanel> 
+                       <apex:outputText rendered="{!isSubmitCase && count>0  }" escape='false'> <!-- rendered="{!isSubmitCase && (count>0 && count1>0) }" escape='false'> -->
+                           <div style='float:left;line-height:40px;font-weight:bold;padding-left:250px;'> Did the solution above help you solve your problem?</div>
+                       </apex:outputText>
+                    <div class="btnContainer" id="buttonSubmit">
+                    <apex:outputpanel rendered="{!isSubmitCase  }"> <!-- rendered="{!isSubmitCase &&  count1>0} -->
+                     
+                      <apex:commandButton value="Yes, Go Back" onclick="submitcase(0);showHomePage();return false;"  styleclass="primary-btn" rendered="{!isSubmitCase && count>0}"/>
+                      <apex:commandButton onclick="submitcase(1);submitCaseDetail();return false;" value="{!IF(count>0,'No, ','')}Submit Case" styleclass="primary-btn" style="{!IF(count==0,'float:right','')}" />
+                   </apex:outputpanel>
+                    </div>
+                </div>
+           
+                <div id='overLay' style='display:none;'>     
+                    <div class='overLay' style="display:block;z-index:99999;"></div>
+                    <div  class="loader-static" style='z-index:100000;'>
+                    <div class="loader-static-panel">
+                    <div style='margin-top:0px;font-weight:bold;'>We are creating your Case.  One moment please</div>
+                </div>
+            <div class="loader-fix"></div>
+        </div>
+       </div>
+        </apex:outputpanel>
+        <div id="overlayNew" style="text-align:center;padding-top:700px;">
+            <apex:image value="{!$Resource.loading}" ></apex:image>
+        </div> 
+         <apex:actionFunction action="{!SummitCase}" name="submitCase" /> 
+         <apex:actionFunction action="{!createCase}" name="submitCaseDetail1" />  
+         <apex:actionFunction action="{!showArticleList}" name="showArticleList" /> 
+         <apex:actionFunction action="{!$Site.CurrentSiteUrl}RCSupportPortalHome"  name="showHomePage" /> 
+         <apex:actionStatus id="Ajaxstatus" onStart="showOverlay();" onstop="hideOverlay();"/>
+         <apex:actionFunction name="callPortalQuestionAF" action="{!setPortalQuestion}" reRender="faxingSoftPhonic,assistancePnl" status="Ajaxstatus" />   
+    </div>
+   </apex:form> 
+    <style>
+      .bodyHidden{
+        overflow:hidden;
+      }
+    </style>
+    <script>
+         $('.rc-result-Article').pajinate({
+                num_page_links_to_display : 10,
+                items_per_page : 10,
+                show_first_last: false
+         });
+            $(document).ready(function(){
+              $(".articleLink").colorbox({iframe:true, width:"80%", height:"95%",fixed: true,
+               onOpen:function(){$('body').addClass('bodyHidden'); },
+               onClosed:function(){$('body').removeClass('bodyHidden');}
+              });
+            });
+        </script>
+        <script>
+          //$(".SubmitCaseDiv").hide();
+          if({!isSubmitCase}){
+            $("#NextCase").hide(); 
+            $("#CaseDEtails").hide(); 
+          }
+          function showDiv() {
+            $(".SubmitCaseDiv").show();
+             showArticleList();
+             // $("#NextCase").hide(); 
+             //$("#CaseDEtails").hide(); 
+          }
+          
+          function submitCaseDetail() {
+            //alert(1);
+              //$('#isSubmit').show();
+             // $('#buttonSubmit').hide();
+             //$('#con1').hide();
+             $('#overLay').show();
+             //submitCase();
+            submitCaseDetail1();
+           
+          }  
+    </script> 
+   </div>
+    <!-- <div id="Severity"  style="display: none; left: 25%; top: 25%; z-index: 9999; position:fixed;">
+       <div class="sever-def">
+        <h5>Severity Definitions</h5>
+        <dl>
+          <dt>Level</dt>
+            <dd>Definitions</dd>
+          <dt>Level 1 - Critical</dt>
+            <dd>Critical issues affecting all users, including system unavailability with no workaround available.</dd>
+            <dt>Level 2 - Urgent</dt>
+            <dd>Major functionality is impacted or significant performance degradation is experienced. Issue is persistent and affects many users and/or major functionality. No reasonable workaround available.</dd>
+            <dt>Level 3 - High</dt>
+            <dd>System performance issue or product issues affecting some, but not all users. Short term workaround is available, but not scalable.</dd>
+            <dt>Level 4 - Medium</dt>
+            <dd>Inquiry regarding a routine technical issue: information requested on system capabilities, navigation, installing or configuration and issue affecting a small number of users. Reasonable workaround available.</dd>
+        </dl>
+        <a class="close" href='javascript:void(0);' onclick='hideSeverityDetail();'>&nbsp;</a>
+        </div>   
+   </div>-->
+   
+   <div id="Severity"  style="display: none; left: 20%; top: 7%; z-index: 10000; position:fixed;">
+       <div class="sever-def" style="width:750px !important;">
+        <h5>Severity Definitions</h5>
+        <dl>
+          <dt>Level</dt>
+            <dd>Definitions</dd>
+            <dt>Level 1 - Critical</dt>
+            <dd>
+                <div>
+                    Critical issues affecting all users, including system unavailability with no workaround available.
+                </div>
+                <div class="example">Example: All users are impacted including calling/faxing/web navigation.</div>
+            </dd>
+            <dt>Level 2 - Urgent</dt>
+            <dd>
+                <div>Major functionality is impacted or significant performance degradation is experienced. Issue is persistent and affects many users 
+                    and/or major functionality. No reasonable workaround available.
+                </div>
+                <div class="example">Example: Most users are impacted due to inadequate quality of services such as calls/faxes. Some feature and functionality are not operational affecting 
+                    business/productivity severely with no work around available.
+                </div>
+            </dd>
+            <dt>Level 3 - High</dt>
+            <dd>
+                <div>System performance issue or product issues affecting some, but not all users. Short term workaround is available, 
+                    but not scalable.</div>
+                <div class="example">Example: Calls and faxes are working but the setup of the system is undesirable.</div>
+            </dd>
+            <dt>Level 4 - Medium</dt>
+            <dd>
+            <div>Inquiry regarding a routine technical issue: information requested on system capabilities, navigation, installing or 
+            configuration and issue affecting a small number of users. Reasonable workaround available.
+            </div>
+            <div class="example">Example: All services are working as expected but looking into other features or options to route calls and faxes. 
+                This is including questions about how to use the product and where to find information.</div>
+            </dd>
+        </dl>
+        <p>If you are looking to submit feedback about the product or user experience, please log into your account at 
+                <a href="https://service.ringcentral.com" target="_blank" style="text-decoration:underline;">https://service.ringcentral.com</a> and click the Feedback button
+        </p>
+        <br/>
+        <a class="close" href='javascript:void(0);' onclick='hideSeverityDetail();'>&nbsp;</a>
+        </div>   
+   </div>
+   
+    <script type="text/javascript"> 
+         showOrHide = 'false';
+            /*
+         $(document).ready(function() {
+            $('#emailDivC').mouseenter(function() {
+                if($("#chk2").is(':checked')) {
+                    $('#popupInfo').show();
+                    showOrHide = 'true';
+                }
+            });
+            $('#emailDiv').mouseleave(function(event1) {
+                if($("#chk2").is(':checked') && showOrHide == 'true') {
+                    var el = event1.target || event1.srcElement.tagName;
+                    //alert($(el).attr('class'));
+                    var topdiv = $(el).parents('.emailDiv');
+                    //alert(topdiv.attr('class'));
+                    if(!$(el).hasClass('arrow_box') || !$(topdiv).hasClass('emailDiv')) {
+                        alert(1);
+                        $('#popupInfo').stop(true,true).fadeOut(3000);
+                        //$('#popupInfo').hide();
+                        //showOrHide = 'false';
+                    } else {
+                        $('#popupInfo').stop();
+                        alert(2);
+                    }
+                }
+            });
+        });
+        */
+         $(document).ready(function () {
+           $('#emailDivC').hover(function() {
+                if($("#chk2").is(':checked')) {
+                    $('#popupInfo').stop(true, true).fadeIn(1);
+                }
+              },function(){
+                   $('#popupInfo').stop(true, true).fadeOut(1000);
+             });
+             $('#popupInfo').hover(function() {
+                if($("#chk2").is(':checked')) {
+                    $('#popupInfo').stop(true, true).fadeIn(1);
+                }
+              },function(){
+                   $('#popupInfo').stop(true, true).fadeOut(1000);
+             });
+        });
+        
+        
+        
+        
+        function FormatNumber(phoneNum) { 
+         var sVal='';
+         var oldValue;
+         var nVal = phoneNum.length;
+         var sChar='';
+         oldValue=phoneNum;
+         try {
+          for(c=0;c<nVal;c++) {
+             sChar = phoneNum.charAt(c);
+              sChar = phoneNum.charAt(c);      
+              nChar = sChar.charCodeAt(0);
+             if ((nChar >=48) && (nChar <=57))  {sVal += phoneNum.charAt(c);}
+          }
+        } catch (exception) { //AlertError("Format Number",exception); 
+            sVal=oldValue;
+        }
+        if(sVal.length>10){
+           try{
+                oldValue=sVal;
+                 sVal=sVal.substring((sVal.length-10));
+             }catch(exception){
+                 sVal=oldValue;
+            }
+        }
+        return sVal;
+        }
+    
+        function validateForm(){
+           //$('.errorMsg').show();
+           var isValid=$('[id$=CaseForm]').valid();
+           
+            /*if(isValid) {
+                try {
+                    isValid = ValidateChkBox();
+                    if(isValid)
+                    isValid = contactMethodValidation();
+                } catch(x) {}
+            }*/
+            //if((isValid)&&(ValidateChkBox())&&(contactMethodValidation())){
+            if((isValid)&&(ValidateChkBox())){
+                showDiv();
+            } else {
+                        if(ValidateChkBox()== false){
+                            var errorDiv = $('.errmsg:visible').first();
+                            var scrollPos1 = errorDiv.offset().top -40;
+                            $(window).scrollTop(scrollPos1);
+                        }
+                        if(isValid == false){
+                            var errorDiv = $('.errorMsg:visible').first();
+                            var scrollPos = errorDiv.offset().top -60 ;
+                            $(window).scrollTop(scrollPos  );
+                        }
+            }
+            return false;
+        }
+        function hideErrorDiv(){
+            var d1 =    document.getElementById('errorChkBox1');
+             d1.style.display = 'none';
+        }
+        function ValidateChkBox() {
+             var yes = $("#chk1").is(':checked');//document.getElementById('chk1').checked;
+             var no = $("#chk2").is(':checked');
+             // alert(yes + ' ## ' + no);
+             var d =     document.getElementById('errorChkBox');
+             var d1 =    document.getElementById('errorChkBox1');
+             if(yes == false && no == false) {
+                //$("#errorChkBox").show();
+                //("#errorChkBox1").hide();
+                d.style.display = 'block';
+                //d1.style.display ='none';
+                return false;
+             } else if(no == true){
+                var fnameCurrent = "{!ConDetail.FirstName}";
+                var LnameCurrent = "{!ConDetail.LastName}";
+                var PhoneCurrent = "{!ConDetail.Phone}";
+                var EmailCurrent = "{!ConDetail.Email}";
+               
+                var fnameChange = $(".fname").val();
+                var LnameChange = $(".lname").val();
+                var PhoneChange = $(".phonenum").val();
+                var EmailChange = $(".emailadd").val();
+                
+                if((fnameCurrent != fnameChange)
+                    || (LnameCurrent != LnameChange)
+                    || (PhoneCurrent != PhoneChange)
+                    || (EmailCurrent != EmailChange)) { 
+                        return true;
+                }else {
+                //alert('Please modify atleast one value ');
+                    d1.style.display = "block";
+                    d.style.display = "none";
+                    return false;
+                }
+                /*if(yes == true) {
+                    //("#errorChkBox").show();
+                //$("#errorChkBox1").hide();
+                }*/
+             } else {
+                 d1.style.display = "none";
+                 d.style.display = "none";
+                return true;
+            } 
+        } 
+        
+      /* function onChangeRadiovalue(selectedValue){
+            document.getElementById('{!$Component.CaseForm.SelectedRadio}').value = selectedValue.value;
+            $('#CMId').hide();
+       } 
+       function contactMethodValidation() {
+            try{
+                //{!$Component.CaseForm.SelectedRadio}
+                var RadioValue= document.getElementById('{!$Component.CaseForm.SelectedRadio}').value;
+                if(RadioValue != null && RadioValue != '') {
+                    return true;
+                }
+                $("#CMId").show();
+                return false;
+            }catch(x){alert(x)
+            }
+        }*/
+        
+        function checkAssistanceVal(selVal) {
+            $('.desc').empty();
+            var selectedVal = $("[id$=assistancelabel] option:selected").val();
+            if(selectedVal != ''){
+                closewin();
+                $("#container2").show();
+                if(selectedVal == 'Sales Inquiry or Upgrade') {
+                    $("#container3").show();
+                    $("#container2").hide();                        
+                    $("#container4").hide();
+                } else if(selectedVal == 'Service Downgrade or Cancellation') { 
+                    $("#container4").show();
+                    $("#container2").hide();                        
+                    $("#container3").hide();
+                } else {
+                    $("#container2").show();
+                    $("#container3").hide();
+                    $("#container4").hide();
+                }
+            } else {
+                $("#container2").show();
+                $("#container3").hide();
+                $("#container4").hide();
+            }
+            callFirstLevelChange(selVal);
+        }
+        
+        if('{!selectedProduct2}' != '') {
+            $('.level2').show();
+        }
+        if('{!selectedProduct3}' != '') {
+            $('.level3').show();
+        }
+        
+        function callFirstLevelChange(selVal) {
+            $('.level2').hide();
+            $('.level3').hide();
+            $('.select2').empty();
+            $('.select2').prev().html('Please select product issue');
+            var vals = selVal;
+            getOptionsLevel2 (vals);
+        }
+    $(document).ready(function() {
+           // $(".fname").addClass("myClass yourClass");
+         $('.form-new-case').validate({
+             rules: {
+                  "{!$Component.CaseForm.assistancelabel}": "required",
+                  "{!$Component.CaseForm.assistancelabel2}": "required",
+                  "{!$Component.CaseForm.assistancelabel3}": "required",
+                 "{!$Component.CaseForm.severitylabel}": "required",
+                  "{!$Component.CaseForm.subjectlabel}": "required",
+                 "{!$Component.CaseForm.descriptionlabel}": "required",
+                 "{!$Component.CaseForm.lastName2}": "required",  
+                 "{!$Component.CaseForm.firstName2}": "required",
+                 "{!$Component.CaseForm.contactNumber}": {
+                                                          required:true,
+                                                         // phoneUS: true
+                                                          }, 
+                              
+               "{!$Component.CaseForm.emailAddress2}": {
+                                                           required: true,
+                                                           email: true
+                                                         }
+             },
+             messages: {
+                 "{!$Component.CaseForm.assistancelabel}": "Please enter a value",
+                 "{!$Component.CaseForm.assistancelabel2}": "Please enter a value",
+                 "{!$Component.CaseForm.assistancelabel3}": "Please enter a value",
+                 "{!$Component.CaseForm.severitylabel}": "Please enter a value",
+                 "{!$Component.CaseForm.subjectlabel}": "Please enter a subject",
+                 "{!$Component.CaseForm.descriptionlabel}": "Please enter a description",
+                 "{!$Component.CaseForm.lastName2}": "Please enter a value",
+                 "{!$Component.CaseForm.firstName2}": "Please enter a value",
+                 "{!$Component.CaseForm.contactNumber}":{
+                          required:"Please enter a value",
+                         // phoneUS:"Please specify a valid phone number"
+                          },
+                 "{!$Component.CaseForm.emailAddress2}":{
+                           required: "We need your email address to contact you",
+                           email: "Your email address must be in the format of name@domain.com"
+                         }
+                                         
+             },errorPlacement: function(error, element) {//alert(element.attr("name"));
+                  if (element.attr("name") == "{!$Component.CaseForm.assistancelabel}"
+                  || element.attr("name") == "{!$Component.CaseForm.assistancelabel2}"  
+                  || element.attr("name") == "{!$Component.CaseForm.assistancelabel3}" ){
+                   // error.insertAfter("#uniform-{!$Component.CaseForm.assistancelabel}");
+                    error.appendTo(element.parent("div").next("div") );
+                  }else if(element.attr("name") == "{!$Component.CaseForm.severitylabel}" 
+                   || element.attr("name") == "{!$Component.CaseForm.emailAddress2}"
+                   || element.attr("name") == "{!$Component.CaseForm.lastName2}"
+                   ||element.attr("name") == "{!$Component.CaseForm.firstName2}"
+                   || element.attr("name") == "{!$Component.CaseForm.contactNumber}"){
+                    //error.insertAfter("#uniform-{!$Component.CaseForm.severitylabel}");
+                    console.log(element.parent("div").next("div"));
+                    error.appendTo(element.parent("div").next("div") );
+                  }else{
+                    //error.insertAfter(element);
+                      error.appendTo(element.next("div") );
+                    }
+                    //error.insertAfter('.errorMsg');
+             }
+         });
+     });
+    $(function(){
+       $(".uniform").uniform();
+    }); 
+    
+     /* Method to get dependent list values */
+    
+    function getDependentOptions (objName, ctrlFieldName, depFieldName) {
+    // Isolate the Describe info for the relevant fields
+        var objDesc = sforce.connection.describeSObject(objName);
+        var ctrlFieldDesc, depFieldDesc;
+        var found = 0;
+        for (var i=0; i<objDesc.fields.length; i++) {
+            var f = objDesc.fields[i];
+            if (f.name == ctrlFieldName) {
+                ctrlFieldDesc = f;
+                found++;
+            } else if (f.name == depFieldName) {
+                depFieldDesc = f;
+                found++;
+            }
+            if (found==2) break; 
+        }
+     
+        // Set up return object
+        var dependentOptions = {};
+        var ctrlValues = ctrlFieldDesc.picklistValues;
+        for (var i=0; i<ctrlValues.length; i++) {
+            dependentOptions[ctrlValues[i].label] = [];
+        }
+     
+        var base64 = new sforce.Base64Binary("");
+        function testBit (validFor, pos) {
+            var byteToCheck = Math.floor(pos/8);
+            var bit = 7 - (pos % 8);
+            return ((Math.pow(2, bit) & validFor.charCodeAt(byteToCheck)) >> bit) == 1;
+        }
+        
+        // For each dependent value, check whether it is valid for each controlling value
+        var depValues = depFieldDesc.picklistValues;
+        for (var i=0; i<depValues.length; i++) {
+            var thisOption = depValues[i];
+            var validForDec = base64.decode(thisOption.validFor);
+            for (var ctrlValue=0; ctrlValue<ctrlValues.length; ctrlValue++) {
+                if (testBit(validForDec, ctrlValue)) {
+                    dependentOptions[ctrlValues[ctrlValue].label].push(thisOption.label);
+                }
+            }
+        }
+        return dependentOptions;
+    }
+ 
+    function getOptionsLevel2 (selVal){
+        $('.desc').empty();
+        var OBJ_NAME = 'Case';
+        var CTRL_FIELD_NAME = "Product_Assistance__c";
+        var DEP_FIELD_NAME = "Product_Assistance_Lvl2__c";
+        var options = getDependentOptions(OBJ_NAME, CTRL_FIELD_NAME, DEP_FIELD_NAME);
+        var depValue = options[selVal];
+        var options1 = '';
+        options1 += "<option value='' >Please select product issue</option>";
+        var showCount = 0;
+        for (var i = 0; i < depValue.length; i++) {
+              options1 += '<option value="' + depValue[i] + '">' + depValue[i] + '</option>';
+              ++showCount;
+        }
+         // $('#listBox').html(options1);
+        if(options1.length != 0) {
+            $('.select2').html(options1);
+        }  
+        if(showCount != 0) {
+            $('.level2').show();
+        }
+        console.debug(options);
+        callPortalQuestionAF();
+    } 
+    
+    
+    
+    function getOptionsLevel3 (selVal){
+        $('.desc').empty();
+        // clear old values
+        $('.level3').hide();
+        $('.select3').empty();
+        $('.select3').prev().html('Please select product issue');
+        var vals = selVal;
+            
+        var OBJ_NAME = 'Case';
+        var CTRL_FIELD_NAME = "Product_Assistance_Lvl2__c";
+        var DEP_FIELD_NAME = "Product_Assistance_Lvl3__c";
+        var options = getDependentOptions(OBJ_NAME, CTRL_FIELD_NAME, DEP_FIELD_NAME);
+        var depValue = options[selVal];
+        var options1 = '';
+        options1 += "<option value='' >Please select product issue</option>";
+        var showCount = 0;
+        for (var i = 0; i < depValue.length; i++) {
+            ++showCount;
+            options1 += '<option value="' + depValue[i] + '">' + depValue[i] + '</option>';
+        }
+        if(options1.length != 0) {  
+            $('.select3').html(options1);
+        }
+        if(showCount != 0) {
+            $('.level3').show();
+        }  
+        console.debug(options);
+        callPortalQuestionAF();
+    } 
+    
+    function getPortalQuestion(selectVal) {
+        callPortalQuestionAF();
+    } 
+    
+    </script>    
+</apex:page>
+<!-- UNUSED CODE BUT KEPT FOR BACKUP -->
+<!-- <apex:selectOption itemValue="Please select product area" itemLabel="Please select product area"/>
+<apex:selectOption itemValue="Settings & Configurations" itemLabel="Settings & Configurations"/>
+<apex:selectOption itemValue="Call Handling & Call Forwarding" itemLabel="Call Handling & Call Forwarding"/>
+<apex:selectOption itemValue="Login" itemLabel="Login"/>
+<apex:selectOption itemValue="Softphone" itemLabel="Softphone"/>
+<apex:selectOption itemValue="Fax" itemLabel="Fax"/>
+<apex:selectOption itemValue="Billing" itemLabel="Billing"/>
+<apex:selectOption itemValue="Desk Phones" itemLabel="Desk Phones"/>
+<apex:selectOption itemValue="Mobile Apps" itemLabel="Mobile Apps"/>
+<apex:selectOption itemValue="Number Transfer" itemLabel="Number Transfer"/> --> 
+
+                    <!-- <apex:selectOption itemValue="Please select severity level" itemLabel="Please select severity level"/>
+<apex:selectOption itemValue="Level 2 - Urgent" itemLabel="Level 2 - Urgent"/>
+<apex:selectOption itemValue="Level 3 - High" itemLabel="Level 3 - High"/>
+    <apex:selectOption itemValue="Level 4 - Medium" itemLabel="Level 4 - Medium"/>-->
