@@ -12,3 +12,6 @@ pageName="RCSupportAdvCaseCreateUK"  rendered="{!UKPortal}"
 /*****ApexClass*****/
 Name = RCSupportAdvCaseCreate
 
+
+supportChatTextFromLabel
+
