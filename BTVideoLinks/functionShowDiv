@@ -1,0 +1,191 @@
+function showDiv(divId){
+   document.getElementById(divId).style.display="block";
+   lastAction='advancedSearch';
+   
+   oldAnswerPagevalue=document.getElementById('searchText').value;
+   document.getElementById('advanceSearchText').value=oldAnswerPagevalue;
+    document.getElementById('advanceSearchText').focus();
+    
+     $('body').append('<div id="fade"></div>'); //Add the fade layer to bottom of the body tag.
+        $('#fade').css({'filter' : 'alpha(opacity=80)'}).fadeIn(); //Fade in the fade layer 
+    }
+function hideDiv(divId,action,frame){
+document.getElementById(divId).style.display="none";
+ lastAction=action;
+ if(frame=='frame'){
+     var iframe = document.getElementById('frameCase');
+     
+     iframe.src = '';
+     //iframe.src ="http://ringcentral.force.com/rcsupport";
+ }
+if(action=='closeAction'){
+    document.getElementById('searchText').value=oldAnswerPagevalue;
+    }
+ document.getElementById('searchText').focus();
+$("#fade").fadeOut("fast");
+$("#fade").remove();
+}
+
+function AdvancedSearch(textId,serviceId,catId){
+
+var text=document.getElementById(textId).value;
+
+ if(text!='')
+     {
+       text=text.replace(/^\s+|\s+$/g,"");
+       text=text.replace(/ {2,}/g,' ');
+     }
+
+if(text!=null && text!=''){
+text=text.replace('&',' and ');
+}
+//var service=document.getElementById(serviceId).value;
+var catg=document.getElementById(catId).value;
+  var siteName='https://box12-ringcentral.cs12.force.com/btcloudphone/';
+     var url=siteName+'SupportPortalSearch'+"?c="+catg+"&k="+text+"&action=SearchAnswer";
+        /* var servicefilter=document.getElementById(serviceId).value;
+        if(servicefilter!='None'){
+            url=url+"&serviceFilter="+service;
+        }
+         url=url+"&";*/
+   hideDiv('showDiv','advancedSearchAction');
+   window.location=url;
+  
+}
+function setTextValue(sourceDiv,destDiv){
+     document.getElementById(destDiv).value=document.getElementById(sourceDiv).value;
+}
+
+
+function openCasefromMenu(divId)
+{
+ 
+}
+
+function loadCaseBool()
+{
+    window.location="http://service.ringcentral.com/login.asp?p_next_page=MYSTUFF";
+}
+
+   function publicShowModel(divID,action)
+    {
+        document.getElementById(divID).style.display =(document.getElementById(divID).style.display== "block"?"none":"block");
+
+        if(action=='email' || action=='message'){
+        divID='rn_DetailTools'; 
+        var divId1='rnDialog1_c' ;
+        if(action=='message'){
+            divId1='rnDialog2_c' ;
+        }
+
+        $('#' + divId1).css({
+           // 'top' : popMargTop,
+            //'left' :popMargLeft ,
+             'top' : '30%',
+            'left' :'30%',
+            'position':'fixed',
+            'margin-top' : 'auto',
+            'margin-left' :'auto'
+        });
+        $('body').append('<div id="fade"></div>'); //Add the fade layer to bottom of the body tag.
+        $('#fade').css({'filter' : 'alpha(opacity=80)'}).fadeIn(); //Fade in the fade layer 
+     }
+
+
+    }
+
+      function sendMail(recId,senderId,senderName){
+       
+         var strMessage='';
+         var isFilled=true;
+      
+              
+         var recId1=recId;
+         var senderId1=senderId;
+          var senderName1=senderName;
+      
+        recId=document.getElementById(recId);
+        senderId=document.getElementById(senderId);
+        senderName=document.getElementById(senderName);
+          
+        if(recId.value=='' || recId.value==null){
+              strMessage=strMessage+"<a href='#' onclick=\"document.getElementById('"+recId1+"').focus();return false;\">Recipient Email is required</a><br/>";
+            isFilled=false;
+        }else if(isValidEmail(recId.value)==false){
+            strMessage=strMessage+"<a href='#' onclick=\"document.getElementById('"+recId1+"').focus(); return false;\">Recipient Email is invalid</a><br/>";
+        isFilled=false;
+        }
+       
+         if(senderId.value=='' || senderId.value==null){
+           strMessage=strMessage+"<a href='#' onclick=\"document.getElementById('"+senderId1+"').focus(); return false;\">Your Email is required</a><br/>";
+          isFilled=false;
+        }else if(isValidEmail(senderId.value)==false){
+            strMessage=strMessage+"<a href='#' onclick=\"document.getElementById('"+senderId1+"').focus(); return false;\">Your Email is invalid</a><br/>";
+            isFilled=false;
+        }
+         if(senderName.value=='' || senderName.value==null){
+           strMessage=strMessage+"<a href='#' onclick=\"document.getElementById('"+senderName1+"').focus(); return false;\">Your Name is required</a><br/>";
+        isFilled=false;
+        }
+ 
+    $('div.rn_MessageBox').remove();
+   if(isFilled==true){
+       sendMail1(recId,senderId,senderName);
+   }else{
+     $('.rn_EmailAnswerLinkForm').append("<div class='rn_MessageBox rn_ErrorMessage' id='rn_EmailAnswerLink_11_ErrorMessage'>"+strMessage+"</div>");
+   }
+   }
+   function isValidEmail(txtEmail){
+         var filter = /^[a-zA-Z0-9]+[a-zA-Z0-9_.-]+[a-zA-Z0-9_-]+@[a-zA-Z0-9]+[a-zA-Z0-9.-]+[a-zA-Z0-9]+.[a-z]{2,4}$/;
+             // var filter = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9]+\.[a-zA-Z]{2,4}$/;  
+           if(filter.test(txtEmail)){
+                  return true;
+                }
+    else{
+        return false;
+    }
+}
+ function sendMail1(recId,senderId,senderName){
+          var currentPage=location.href;
+    
+        var recMail=recId.value;
+        var senderMail=senderId.value;
+        var sendername=senderName.value;
+
+         var title='';
+          if(title==''){
+              try{
+                title=DesktopContext.pageTitle;
+              }catch(ex){}
+            }
+       
+        var redirectPage='https://box12-ringcentral.cs12.force.com/btcloudphone/';
+        var postUrl=redirectPage+"RCSupportEmailPage?emailPage='"+currentPage+"'&recMail="+
+        recMail+"&senderMail="+senderMail+"&sendername="+sendername+"&title="+title;
+        hideModal('emailPageId');
+     
+        //alert(postUrl);
+        $.ajax({
+        url: postUrl,
+        asynchronous:true,
+        success: function(data) {
+            $('.result').html(data);
+            // alert('Load was performed.');
+            recId.value="";
+            senderId.value="";
+            senderName.value="";
+            publicShowModel('emailMessagePageId','message');
+        }
+        });
+    }
+
+  function hideModal(divID,action)
+    {
+        document.getElementById(divID).style.display = "none";
+        if(action=='closeAction'){
+        document.getElementById('').value=oldAnswerPagevalue;
+        }
+        $("#fade").fadeOut("fast");
+        currentAction='';
+        $("#fade").remove();
+    }
