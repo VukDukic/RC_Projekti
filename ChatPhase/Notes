@@ -1,0 +1,9 @@
+Name = RCSupportPortalCreateNewCase
+
+Controller="RCSupportControllerHandler" action="{!redirectToPage}"
+
+pageName="RCSupportAdvCaseCreateUS"  rendered="{!!UKPortal}"
+
+pageName="RCSupportAdvCaseCreateUK"  rendered="{!UKPortal}"
+
+
