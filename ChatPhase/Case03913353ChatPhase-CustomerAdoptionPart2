@@ -1,37 +1,25 @@
 Case: 03913353 Chat Phase - Customer Adoption Part 2
 
 The product team has requested a change to remove the message that appears on the Web Case submission page when the Customer selects Desk Phones or Softphone.
+
+
 Developed Artifacts
+
 Apex Classes
 RCSupportAdvCaseCreate.apxc
+
 VisualForce Pages 
 RCSupportPortalCreateNewCase
 RCSupportAdvCaseCreateUS
 RCSupportAdvCaseCreateUK
+
 
 Installation Guide
 This change was developed by Vuk Dukic and deployed to production.  No further configuration is required.
 User Guide
 Users will be able to select the “Desk Phone” value on the “I Need Assistance With” with out seeing the help text box.  
 
- 
 
-
-
-
-
-
-
-
-
-
- Before
-
-
-
-
-
-After
 
 Code changed on lines 322 and 326:  
 
