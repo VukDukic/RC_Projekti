@@ -15,3 +15,11 @@ Name = RCSupportAdvCaseCreate
 
 supportChatTextFromLabel
 
+Apex Classes
+RCSupportAdvCaseCreate.apxc
+
+
+VisualForce Pages 
+RCSupportPortalCreateNewCase
+RCSupportAdvCaseCreateUS
+RCSupportAdvCaseCreateUK
