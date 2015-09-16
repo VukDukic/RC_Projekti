@@ -1,0 +1,13 @@
+IF (ISNEW() && ISPICKVAL(Support_Escalate_To__c, "Office of the President") ,
+
+TRUE,
+
+IF( TEXT ( PRIORVALUE(Support_Escalate_To__c) ) <> TEXT (Support_Escalate_To__c) ,
+
+IF( ISPICKVAL(Support_Escalate_To__c, "Office of the President") && ( NOT( ISPICKVAL(Status, "Cancelled") )|| NOT( ISPICKVAL(Status, "Closed") ) ) ,
+
+TRUE,
+
+FALSE),
+
+FALSE))
