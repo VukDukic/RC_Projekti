@@ -3,3 +3,9 @@ Hello Business Services - for support cases with 10+ users, is it possible to cr
 Richard Wray here in the UK office. We would like these cases to come directly to him and not directed to Manila. 
 
 Can you please advise what is possible. Thank you. 
+
+High level requirement:
+* Create UK 10+ phone queue/skill with Richard on it
+* Overflow of UK 10+ skill will be going to MNL if Richard is preoccupied
+* UK 10+ web cases need to have a different queue/routing as well
+
